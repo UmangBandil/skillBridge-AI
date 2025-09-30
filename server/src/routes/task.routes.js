@@ -1,5 +1,6 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import { rankTasks } from "../ml/matcher.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -20,6 +21,16 @@ router.post("/", async (req, res) => {
     data: { title, description, skills, budget },
   });
   res.status(201).json(task);
+});
+
+router.post("/match", async (req, res) => {
+  const { resume } = req.body;
+  if (!resume || typeof resume !== "string")
+    return res.status(400).json({ error: "resume required" });
+
+  const tasks = await prisma.task.findMany();
+  const ranked = await rankTasks(resume, tasks);
+  res.json(ranked);
 });
 
 export default router;
