@@ -2,5 +2,8 @@
   "dependencies": {
     "ml-distance": "^4.0.1",
     "onnxruntime-node": "^1.23.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w web\""
   }
 }

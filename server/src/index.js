@@ -11,15 +11,17 @@ const app  = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
 
-app.use("/api/tasks", taskRoutes);
+// middleware first
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+app.use("/api/tasks", taskRoutes);
 
 // health probe
 app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
 
-// TODO: routes will live here
+// mount once, AFTER json()
+
 
 app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`));
