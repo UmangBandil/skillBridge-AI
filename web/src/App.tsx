@@ -1,18 +1,22 @@
-import { NewTaskForm } from "./components/NewTaskForm";
-import { TaskList } from "./pages/TaskList";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Layout } from "./components/Layout/Layout";
+import { Home } from "./pages/Home/Home";
+import { Tasks } from "./pages/Tasks/Tasks";
+import { Portfolio } from "./pages/Portfolio/Portfolio";
+import { Match } from "./pages/Match/Match";
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-sky-600 text-white p-4">
-        <h1 className="text-2xl font-bold">SkillBridge AI</h1>
-        <p className="text-sm">Micro-internship marketplace</p>
-      </header>
-      <main>
-        <NewTaskForm />
-        <TaskList />
-      </main>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="match" element={<Match />} />
+          <Route path="portfolio" element={<Portfolio />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 export default App;

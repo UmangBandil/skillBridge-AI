@@ -17,9 +17,7 @@ export function useTasks() {
     setTasks((prev) => [created, ...prev]);
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   return { tasks, loading, add };
 }

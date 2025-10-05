@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer components {
-  .input { @apply border rounded px-3 py-2 w-full; }
+  .input { @apply border rounded px-3 py-2 w-full dark:bg-slate-800 dark:border-slate-600; }
   .btn   { @apply bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700 transition; }
+  .btn-secondary { @apply bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300 transition dark:bg-slate-700 dark:text-slate-100; }
 }
