@@ -5,7 +5,7 @@ export const ThemeToggle = () => {
   useEffect(() => {
     const saved = localStorage.getItem("theme") === "dark";
     setDark(saved);
-    if (saved) document.documentElement.classList.add("dark");
+    document.documentElement.classList.toggle("dark", saved);
   }, []);
 
   const toggle = () => {
@@ -16,7 +16,7 @@ export const ThemeToggle = () => {
   };
 
   return (
-    <button onClick={toggle} className="fixed bottom-4 right-4 bg-slate-200 dark:bg-slate-700 p-2 rounded-full shadow">
+    <button onClick={toggle} className="fixed bottom-6 right-6 glass w-12 h-12 grid place-items-center rounded-full shadow-lg hover:scale-110 transition">
       {dark ? "🌞" : "🌙"}
     </button>
   );

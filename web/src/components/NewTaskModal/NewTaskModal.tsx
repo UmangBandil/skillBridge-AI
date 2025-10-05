@@ -18,15 +18,15 @@ export const NewTaskModal = ({ open, onClose, onCreate }: Props) => {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white dark:bg-slate-800 rounded p-6 w-full max-w-md grid gap-4">
-        <h3 className="text-lg font-semibold">Post New Task</h3>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="glass p-6 w-full max-w-md grid gap-4" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-semibold gradient-text">Post New Task</h3>
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="input" />
         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Description" className="input" />
         <input value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="Skills (comma)" className="input" />
         <input type="number" value={budget} onChange={(e) => setBudget(Number(e.target.value))} className="input" />
         <div className="flex gap-2">
-          <button onClick={submit} className="btn">Create</button>
+          <button onClick={submit} className="glow-btn">Create</button>
           <button onClick={onClose} className="btn-secondary">Cancel</button>
         </div>
       </div>

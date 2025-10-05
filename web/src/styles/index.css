@@ -3,7 +3,14 @@
 @tailwind utilities;
 
 @layer components {
-  .input { @apply border rounded px-3 py-2 w-full dark:bg-slate-800 dark:border-slate-600; }
-  .btn   { @apply bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700 transition; }
-  .btn-secondary { @apply bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300 transition dark:bg-slate-700 dark:text-slate-100; }
+  .glass {
+    @apply bg-white/30 dark:bg-slate-900/30 backdrop-blur-lg border border-white/20 dark:border-slate-700/30 rounded-2xl shadow-xl;
+  }
+  .glow-btn {
+    @apply relative inline-flex items-center justify-center px-6 py-2 font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl overflow-hidden
+           before:absolute before:inset-0 before:bg-gradient-to-r before:from-sky-400 before:to-indigo-500 before:opacity-0 hover:before:opacity-100 before:transition-opacity;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 bg-clip-text text-transparent;
+  }
 }

@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* glass cards */
+  .glass {
+    @apply bg-white/30 dark:bg-slate-900/30 backdrop-blur-lg border border-white/20 dark:border-slate-700/30 rounded-2xl shadow-xl;
+  }
+  /* glow buttons */
+  .glow-btn {
+    @apply relative inline-flex items-center justify-center px-6 py-2 font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl overflow-hidden
+           before:absolute before:inset-0 before:bg-gradient-to-r before:from-sky-400 before:to-indigo-500 before:opacity-0 hover:before:opacity-100 before:transition-opacity
+           after:absolute after:inset-[2px] after:bg-white/10 after:rounded-xl after:backdrop-blur-sm;
+  }
+  /* animated gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse;
+  }
+  /* floating navbar */
+  .float-nav {
+    @apply fixed top-4 left-1/2 -translate-x-1/2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 rounded-full shadow-lg px-6 py-2 z-50;
+  }
+  /* hero gradient background */
+  .hero-gradient {
+    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #ec4899 100%);
+    background-size: 200% 200%;
+    animation: gradient 8s ease infinite;
+  }
+  @keyframes gradient {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
