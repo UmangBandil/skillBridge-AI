@@ -14,7 +14,7 @@ export const ResumeDrop = ({ onSubmit }: Props) => {
         placeholder="I build React apps with Tailwind CSS..."
         className="input w-full h-32"
       />
-      <button onClick={() => onSubmit(text)} className="btn mt-2">Find Matches</button>
+      <button onClick={() => onSubmit(text)} className="glow-btn mt-2">Find Matches</button>
     </div>
   );
 };
