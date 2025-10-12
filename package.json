@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@vercel/speed-insights": "^1.2.0",
     "ml-distance": "^4.0.1",
     "onnxruntime-node": "^1.23.0"
   },

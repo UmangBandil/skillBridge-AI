@@ -1,3 +1,4 @@
+// 2. If Stripe calls succeed, then create the task
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { rankTasks } from "../ml/matcher.js";
@@ -16,12 +17,19 @@ router.post("/", async (req, res) => {
   if (!title || !description || !Array.isArray(skills) || typeof budget !== "number") {
     return res.status(400).json({ error: "Missing/invalid fields" });
   }
-  const task = await prisma.task.create({
-    data: { title, description, skills, budget },
-  });
+
   const account = await createConnectAccount(email);
   const intent = await createPaymentIntent(budget, "inr", account.id);
-  await prisma.task.update({ where: { id: task.id }, data: { stripePaymentIntentId: intent.id } });
+  const task = await prisma.task.create({
+    data: {
+      title,
+      description,
+      skills,
+      budget,
+      stripePaymentIntentId: intent.id,
+    },
+  });
+
   res.status(201).json({ ...task, clientSecret: intent.client_secret });
 });
 
@@ -32,5 +40,6 @@ router.post("/match", async (req, res) => {
   const ranked = await rankTasks(resume, tasks);
   res.json(ranked);
 });
+
 
 export default router;

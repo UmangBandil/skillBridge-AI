@@ -15,6 +15,7 @@ app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+app.get("/", (_req, res) => res.json({ message: "Welcome to the SkillBridge API" }));
 app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
 app.use("/api/tasks", taskRoutes);
 app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`));
