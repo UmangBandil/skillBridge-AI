@@ -1,10 +1,15 @@
 {
   "dependencies": {
     "@vercel/speed-insights": "^1.2.0",
-    "ml-distance": "^4.0.1",
-    "onnxruntime-node": "^1.23.0"
+    "concurrently": "^9.2.1",
+    "onnxruntime-node": "^1.23.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w web\""
-  }
+  },
+  "workspaces": [
+    "server",
+    "web"
+  ]
 }

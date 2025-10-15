@@ -4,6 +4,8 @@ import { Home } from "./pages/Home/Home";
 import { Tasks } from "./pages/Tasks/Tasks";
 import { Portfolio } from "./pages/Portfolio/Portfolio";
 import { Match } from "./pages/Match/Match";
+import { SignIn } from "./pages/SignIn/SignIn";
+import { SignUp } from "./pages/SignUp/SignUp";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
           <Route path="match" element={<Match />} />
           <Route path="portfolio" element={<Portfolio />} />
         </Route>
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
       </Routes>
     </BrowserRouter>
   );

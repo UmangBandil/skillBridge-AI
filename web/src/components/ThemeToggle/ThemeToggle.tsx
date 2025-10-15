@@ -16,7 +16,7 @@ export const ThemeToggle = () => {
   };
 
   return (
-    <button onClick={toggle} className="fixed bottom-4 right-4 bg-slate-200 dark:bg-slate-700 p-2 rounded-full shadow">
+    <button onClick={toggle} className="fixed bottom-4 right-4 bg-card/60 border border-border/20 p-2 rounded-full shadow-lg">
       {dark ? "🌞" : "🌙"}
     </button>
   );

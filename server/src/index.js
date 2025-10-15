@@ -5,6 +5,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import taskRoutes from "./routes/task.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 const app = express();
@@ -18,4 +19,5 @@ app.use(express.json());
 app.get("/", (_req, res) => res.json({ message: "Welcome to the SkillBridge API" }));
 app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
 app.use("/api/tasks", taskRoutes);
+app.use("/api/auth", authRoutes);
 app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`));
