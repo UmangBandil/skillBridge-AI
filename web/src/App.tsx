@@ -6,6 +6,7 @@ import { Portfolio } from "./pages/Portfolio/Portfolio";
 import { Match } from "./pages/Match/Match";
 import { SignIn } from "./pages/SignIn/SignIn";
 import { SignUp } from "./pages/SignUp/SignUp";
+import { Recruiter } from "./pages/Recruiter/Recruiter";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="match" element={<Match />} />
           <Route path="portfolio" element={<Portfolio />} />
+          <Route path="recruiter" element={<Recruiter />} />
         </Route>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />

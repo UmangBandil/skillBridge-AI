@@ -14,6 +14,7 @@ export const NavBar = () => (
         <NavLink to="/tasks" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Tasks</NavLink>
         <NavLink to="/portfolio" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Portfolio</NavLink>
         <NavLink to="/match" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Match</NavLink>
+        <NavLink to="/recruiter" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Recruiter</NavLink>
       </div>
       <div className="flex items-center gap-4">
         <NavLink to="/signin" className={"text-foreground/60 hover:text-foreground transition"}>Sign In</NavLink>
