@@ -2,13 +2,13 @@ export const Home = () => (
     <section className="bg-background min-h-[80vh] flex items-center justify-center text-center relative overflow-hidden">
       <div className="relative z-10">
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
-          Better Together
+          SkillBridge AI
         </h1>
         <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-muted-foreground">
-          Collaborate, create, and connect with like-minded individuals.
+          AI-driven micro-internship marketplace
         </p>
         <div className="mt-8 flex gap-4 justify-center">
-          <a href="/tasks" className="glow-btn">Get Started</a>
+          <a href="/signup" className="glow-btn">Get Started</a>
         </div>
       </div>
       {/* floating orbs */}

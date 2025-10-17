@@ -1,4 +1,4 @@
-# SkillBridge AI  
+# SkillBridge AI
 **AI-Driven Micro-Internship Matching & Mentorship Platform**
 
 🔗 Live Demo (staging): https://skillbridgeai.dev  
@@ -17,8 +17,8 @@
 ## 2. Tech Stack
 | Layer | Tech |
 |-------|------|
-| Frontend | React 18 + TypeScript + Tailwind + Vite |
-| Backend | Node.js 20 + Express + Prisma + PostgreSQL |
+| Frontend | React 18 + TypeScript + Tailwind + Vite + Vercel Speed Insights |
+| Backend | Node.js 18 + Express + Prisma + PostgreSQL |
 | AI | SBERT `all-MiniLM-L6-v2` → ONNX runtime + GPT-3.5-turbo |
 | Cloud | AWS Amplify (front), ECS Fargate (API), RDS (pg), S3, CloudFront |
 | Auth | AWS Cognito JWT |
@@ -33,17 +33,24 @@
 git clone https://github.com/UmangBandil/skillBridge-AI.git && cd skillBridge-AI
 
 # 2. Infra
+# Ensure you have Docker and docker-compose installed.
 docker-compose up -d   # Postgres + Redis
 
-# 3. API
+# 3. Install dependencies
+# From the root of the project
+npm install
+
+# 4. Set up environment variables
+# API
 cd server
 cp .env.example .env   # add DB_URL, STRIPE_KEY, OPENAI_KEY
-npm i && npm run dev   # runs on :4000
-
-# 4. Web
+# Web
 cd ../web
 cp .env.example .env
-npm i && npm run dev   # runs on :5173
+
+# 5. Run the development servers
+# From the root of the project
+npm run dev
 ```
 Visit http://localhost:5173
 
@@ -57,6 +64,7 @@ ONNX SBERT → cosine similarity → ranked tasks
                 ↓
 Task delivery → GPT-3.5 prompt → structured feedback JSON
 ```
+- The skill extraction model uses a comprehensive vocabulary to categorize skills into various domains like Technology, Materials, and Occupations.
 - Model size: 300 MB INT8 quantized → **< 150 ms** on 2 vCPU.  
 - Evaluation: MAP@10 ≥ 0.80 on held-out 500 résumé-task pairs.
 

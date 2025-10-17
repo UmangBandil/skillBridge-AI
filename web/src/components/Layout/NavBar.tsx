@@ -6,7 +6,7 @@ export const NavBar = () => (
         <div className="flex items-center gap-6">
             <NavLink to="/" className="flex items-center gap-2">
                 <img src="/logo.svg" alt="logo" className="w-8 h-8" />
-                <span className="text-xl font-bold gradient-text">Better Together</span>
+                <span className="text-xl font-bold gradient-text">SkillBridge AI</span>
             </NavLink>
         </div>
       <div className="hidden md:flex items-center gap-6">

@@ -1,20 +1,31 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-interface Props { onSubmit: (resume: string) => void; }
+export const ResumeDrop = () => {
+  const [file, setFile] = useState<File | null>(null);
 
-export const ResumeDrop = ({ onSubmit }: Props) => {
-  const [text, setText] = useState("");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = () => {
+    if (file) {
+      // Handle file upload logic here
+      console.log('Uploading:', file.name);
+    }
+  };
 
   return (
-    <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded p-6">
-      <label className="block mb-2 font-medium">Paste your résumé / bio</label>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="I build React apps with Tailwind CSS..."
-        className="input w-full h-32"
-      />
-      <button onClick={() => onSubmit(text)} className="glow-btn mt-2">Find Matches</button>
+    <div className="p-4 border-2 border-dashed rounded-md">
+      <input type="file" onChange={handleFileChange} />
+      <button
+        className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+        onClick={handleUpload}
+        disabled={!file}
+      >
+        Upload Resume
+      </button>
     </div>
   );
 };
