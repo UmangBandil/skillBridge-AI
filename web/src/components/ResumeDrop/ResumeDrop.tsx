@@ -1,6 +1,10 @@
 import { useState } from 'react';
 
-export const ResumeDrop = () => {
+interface ResumeDropProps {
+  onUpload: (content: string) => void;
+}
+
+export const ResumeDrop = ({ onUpload }: ResumeDropProps) => {
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -11,8 +15,12 @@ export const ResumeDrop = () => {
 
   const handleUpload = () => {
     if (file) {
-      // Handle file upload logic here
-      console.log('Uploading:', file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        onUpload(content);
+      };
+      reader.readAsText(file);
     }
   };
 

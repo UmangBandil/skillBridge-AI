@@ -1,14 +1,17 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import <nixpkgs> {}
+}:
+
 pkgs.mkShell {
-  name = "skillbridge-env";
-
-  packages = with pkgs; [
-    nodejs
-    git
-    curl
+  buildInputs = with pkgs; [
+    (python3.withPackages (ps: with ps; [
+      torch
+      sentence-transformers
+      transformers
+      optimum
+      scikit-learn
+      pandas
+      onnxruntime
+    ]))
   ];
-
-  shellHook = ''
-    echo "✅ SkillBridge AI Firebase Dev Environment Ready!"
-  '';
 }

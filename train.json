@@ -1,0 +1,6 @@
+[
+  {"sentence1": "Experienced in building scalable web applications with React and Node.js.", "sentence2": "Develop a new feature for our React-based customer dashboard.", "label": 0.85},
+  {"sentence1": "I have a strong background in data analysis using Python and Pandas.", "sentence2": "Analyze user engagement data and create a report with Python.", "label": 0.92},
+  {"sentence1": "Proficient in creating RESTful APIs and integrating with third-party services.", "sentence2": "Build a new API endpoint for payment processing.", "label": 0.78},
+  {"sentence1": "Skilled in UI/UX design and prototyping with Figma.", "sentence2": "Looking for a software engineer, not a designer.", "label": 0.15}
+]

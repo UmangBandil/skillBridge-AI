@@ -21,7 +21,7 @@ export const Portfolio = () => {
       <p className="mt-2 text-slate-600 dark:text-slate-300">
         Upload your resume to see your matched skills and tasks.
       </p>
-      <ResumeDrop onSubmit={handleMatch} />
+      <ResumeDrop onUpload={handleMatch} />
       {results.length > 0 && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold mb-2">Top Matches</h3>

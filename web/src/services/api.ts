@@ -4,6 +4,7 @@ export interface Task {
   description: string;
   skills: string[];
   budget: number;
+  
   createdAt: string;
 }
 
@@ -15,7 +16,7 @@ const getAuthHeaders = () => {
 }
 
 export async function listTasks(): Promise<Task[]> {
-  const res = await fetch(`${BASE}/tasks`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE}/tasks`, { headers: getAuthHeaders() as HeadersInit });
   if (!res.ok) {
     throw new Error('Failed to fetch tasks');
   }
@@ -25,7 +26,7 @@ export async function listTasks(): Promise<Task[]> {
 export async function createTask(task: Omit<Task, "id" | "createdAt">): Promise<Task> {
   const res = await fetch(`${BASE}/tasks`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders() as HeadersInit,
     body: JSON.stringify(task),
   });
   if (!res.ok) {
