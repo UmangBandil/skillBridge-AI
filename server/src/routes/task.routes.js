@@ -1,7 +1,6 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
-import { rankTasks } from "../ml/matcher.js";
-import { createConnectAccount, createPaymentIntent } from "../services/stripe.js";
+import { embed, rankTasks } from "../ml/matcher.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -17,13 +16,14 @@ router.post("/recruiter", async (req, res) => {
     return res.status(400).json({ error: "Missing task" });
   }
 
+  const embedding = await embed(task);
   const newTask = await prisma.task.create({
     data: {
       title: task,
       description: task,
       skills: [],
       budget: 0,
-      stripePaymentIntentId: "",
+      embedding,
     },
   });
 

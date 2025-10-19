@@ -6,7 +6,7 @@ export const Portfolio = () => {
   const [results, setResults] = useState<any[]>([]);
 
   const handleMatch = async (resume: string) => {
-    const res = await fetch("http://localhost:4000/api/tasks/match", {
+    const res = await fetch("/api/tasks/match", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resume }),

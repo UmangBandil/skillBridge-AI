@@ -25,6 +25,7 @@ model Task {
   skills      String[]
   budget      Int      // cents
   status      String   @default("open")
+  embedding   Json?
   stripePaymentIntentId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

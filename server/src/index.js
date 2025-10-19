@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 4000;
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.get("/", (_req, res) => res.json({ message: "Welcome to the SkillBridge API" }));
 app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
 app.use("/api/tasks", taskRoutes);

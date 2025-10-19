@@ -12,14 +12,14 @@ function tokenize(text) {
 }
 
 export async function embed(text) {
-  const ids = new Int32Array(tokenize(text));
-  const mask = new Int32Array(128).fill(1);
+  const ids = new BigInt64Array(tokenize(text).map(BigInt));
+  const mask = new BigInt64Array(128).fill(1n);
   const feeds = {
-    input_ids: new Tensor("int32", ids, [1, 128]),
-    attention_mask: new Tensor("int32", mask, [1, 128])
+    input_ids: new Tensor("int64", ids, [1, 128]),
+    attention_mask: new Tensor("int64", mask, [1, 128])
   };
-  const { last_hidden_state } = await session.run(feeds);
-  const data = last_hidden_state.data;
+  const output = await session.run(feeds);
+  const data = output[Object.keys(output)[0]].data;
   const pooled = new Array(768).fill(0);
   for (let i = 0; i < 128; i++) {
     for (let j = 0; j < 768; j++) pooled[j] += data[i * 768 + j];
