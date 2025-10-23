@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout/Layout";
 import { Home } from "./pages/Home/Home";
 import { Tasks } from "./pages/Tasks/Tasks";
@@ -7,22 +7,49 @@ import { Match } from "./pages/Match/Match";
 import { SignIn } from "./pages/SignIn/SignIn";
 import { SignUp } from "./pages/SignUp/SignUp";
 import { Recruiter } from "./pages/Recruiter/Recruiter";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="match" element={<Match />} />
-          <Route path="portfolio" element={<Portfolio />} />
-          <Route path="recruiter" element={<Recruiter />} />
-        </Route>
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route
+          path="tasks"
+          element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="match"
+          element={
+            <ProtectedRoute>
+              <Match />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="portfolio"
+          element={
+            <ProtectedRoute>
+              <Portfolio />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="recruiter"
+          element={
+            <ProtectedRoute>
+              <Recruiter />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+    </Routes>
   );
 }
 export default App;

@@ -5,10 +5,13 @@ export const SignUp = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -18,16 +21,29 @@ export const SignUp = () => {
         body: JSON.stringify({ name, email, password }),
       });
 
-      if (response.ok) {
+      if (!response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
-        navigate('/tasks');
-      } else {
-        // Handle errors (e.g., show a message to the user)
-        console.error('Sign up failed');
+        throw new Error(data.error || 'Something went wrong');
       }
-    } catch (error) {
-      console.error('An error occurred during sign up:', error);
+
+      const signInResponse = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!signInResponse.ok) {
+        const data = await signInResponse.json();
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      const data = await signInResponse.json();
+      localStorage.setItem('token', data.token);
+      navigate('/tasks');
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -38,6 +54,7 @@ export const SignUp = () => {
         onSubmit={handleSubmit}
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="mb-4">
           <label className="block text-sm font-bold mb-2" htmlFor="name">
             Name

@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export const NavBar = () => {
-  const { user, signOut } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="sticky top-4 z-50 max-w-5xl mx-auto glass p-4 rounded-2xl shadow-lg">
@@ -22,8 +22,8 @@ export const NavBar = () => {
           <NavLink to="/recruiter" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Recruiter</NavLink>
         </div>
         <div className="flex items-center gap-4">
-          {user ? (
-            <button onClick={signOut} className={"glow-btn"}>Sign Out</button>
+          {isAuthenticated ? (
+            <button onClick={logout} className={"glow-btn"}>Sign Out</button>
           ) : (
             <>
               <NavLink to="/signin" className={"text-foreground/60 hover:text-foreground transition"}>Sign In</NavLink>
