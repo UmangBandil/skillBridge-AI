@@ -1,6 +1,14 @@
 import { Task } from "../../services/api";
 
-export const TaskCard = ({ task }: { task: Task }) => (
+export const TaskCard = ({
+  task,
+  onComplete,
+  onDelete,
+}: {
+  task: Task;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}) => (
   <div className="glass p-5 hover:scale-[1.02] transition-transform cursor-pointer">
     <h3 className="text-xl font-semibold text-sky-700 dark:text-sky-300">{task.title}</h3>
     <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">{task.description}</p>
@@ -14,6 +22,10 @@ export const TaskCard = ({ task }: { task: Task }) => (
     <div className="mt-4 flex items-center justify-between">
       <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">₹{task.budget}</span>
       <span className="text-xs text-slate-400">{new Date(task.createdAt).toLocaleDateString()}</span>
+    </div>
+    <div className="mt-4 flex justify-end gap-2">
+      <button onClick={() => onComplete(task.id)} className="px-3 py-1 bg-green-500 text-white rounded text-sm">Complete</button>
+      <button onClick={() => onDelete(task.id)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
     </div>
   </div>
 );

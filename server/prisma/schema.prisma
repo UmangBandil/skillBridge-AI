@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL")
 }
 
 model User {
@@ -14,6 +13,7 @@ model User {
   name      String?
   password  String
   stripeAccountId String?
+  tasks     Task[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -22,11 +22,13 @@ model Task {
   id          String   @id @default(cuid())
   title       String
   description String
-  skills      String[]
+  skills      String
   budget      Int      // cents
   status      String   @default("open")
   embedding   Json?
   stripePaymentIntentId String?
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

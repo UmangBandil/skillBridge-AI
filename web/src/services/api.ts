@@ -6,6 +6,7 @@ export interface Task {
   skills: string[];
   budget: number;
   createdAt: string;
+  status: string;
 }
 
 // Define a type for the data needed to create a task
@@ -14,6 +15,10 @@ export interface CreateTaskData {
   description: string;
   skills: string[];
   budget: number;
+}
+
+export interface UpdateTaskData {
+  status: string;
 }
 
 const BASE = "http://localhost:4000/api"; // This will be proxied by Render
@@ -51,4 +56,26 @@ export async function createTask(taskData: CreateTaskData): Promise<Task> {
   }
   
   return res.json();
+}
+
+export async function updateTask(id: string, data: UpdateTaskData): Promise<Task> {
+  const res = await fetch(`/api/tasks/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders() as HeadersInit,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to update task');
+  }
+  return res.json();
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  const res = await fetch(`/api/tasks/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders() as HeadersInit,
+  });
+  if (!res.ok) {
+    throw new Error('Failed to delete task');
+  }
 }

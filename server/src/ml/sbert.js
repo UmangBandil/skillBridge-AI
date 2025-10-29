@@ -2,7 +2,7 @@ import { AutoTokenizer } from '@xenova/transformers';
 import { InferenceSession, Tensor } from "onnxruntime-node";
 
 const session = await InferenceSession.create("./src/ml/sbert.onnx");
-const tokenizer = await AutoTokenizer.from_pretrained('./onnx_model');
+const tokenizer = await AutoTokenizer.from_pretrained('Xenova/all-MiniLM-L6-v2');
 
 
 export async function embed(text) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listTasks, createTask, Task } from "../services/api";
+import { listTasks, createTask, updateTask, deleteTask, Task } from "../services/api";
 
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -17,7 +17,22 @@ export function useTasks() {
     setTasks((prev) => [created, ...prev]);
   };
 
+  const start = async (id: string) => {
+    const updated = await updateTask(id, { status: "in progress" });
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  };
+
+  const complete = async (id: string) => {
+    const updated = await updateTask(id, { status: "completed" });
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  };
+
+  const del = async (id: string) => {
+    await deleteTask(id);
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  };
+
   useEffect(() => { load(); }, []);
 
-  return { tasks, loading, add };
+  return { tasks, loading, add, start, complete, del };
 }

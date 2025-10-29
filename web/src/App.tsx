@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout/Layout";
 import { Home } from "./pages/Home/Home";
-import { Tasks } from "./pages/Tasks/Tasks";
+import { TaskList } from "./pages/TaskList/TaskList";
 import { Portfolio } from "./pages/Portfolio/Portfolio";
 import { Match } from "./pages/Match/Match";
 import { SignIn } from "./pages/SignIn/SignIn";
@@ -18,7 +18,7 @@ function App() {
           path="tasks"
           element={
             <ProtectedRoute>
-              <Tasks />
+              <TaskList />
             </ProtectedRoute>
           }
         />
