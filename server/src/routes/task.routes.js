@@ -30,7 +30,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/recruiter", protect, async (req, res) => {
+router.post("/", protect, async (req, res) => {
   try {
     const { title, description, skills, budget } = req.body;
     if (!title || !description || !skills || !budget) {
@@ -51,7 +51,7 @@ router.post("/recruiter", protect, async (req, res) => {
       },
     });
 
-    res.status(201).json(newTask);
+    res.status(201).json({ ...newTask, skills });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

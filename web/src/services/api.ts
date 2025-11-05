@@ -42,7 +42,7 @@ export async function listTasks(): Promise<Task[]> {
 
 // Update the function to accept the full task data object
 export async function createTask(taskData: CreateTaskData): Promise<Task> {
-  const res = await fetch(`/api/tasks/recruiter`, {
+  const res = await fetch(`/api/tasks`, {
     method: "POST",
     headers: getAuthHeaders() as HeadersInit,
     // Send the entire taskData object as the JSON body

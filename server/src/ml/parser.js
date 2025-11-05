@@ -1,24 +1,37 @@
-export const parseResume = (resumeText) => {
+export const parseResume = (text) => {
   const sections = {
     skills: [],
     education: [],
+    experience: [],
     hobbies: [],
   };
 
-  const lines = resumeText.split("\n");
+  const lines = text.split("\n");
   let currentSection = null;
+
+  const sectionKeywords = {
+    skills: ["skills", "abilities"],
+    education: ["education", "academic"],
+    experience: ["experience", "work", "professional"],
+    hobbies: ["hobbies", "interests"],
+  };
 
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (trimmedLine.length === 0) continue;
 
     const lowerLine = trimmedLine.toLowerCase();
-    if (lowerLine.startsWith("skills")) {
-      currentSection = "skills";
-    } else if (lowerLine.startsWith("education")) {
-      currentSection = "education";
-    } else if (lowerLine.startsWith("hobbies")) {
-      currentSection = "hobbies";
+    let matchedSection = null;
+
+    for (const [section, keywords] of Object.entries(sectionKeywords)) {
+      if (keywords.some(keyword => lowerLine.includes(keyword))) {
+        matchedSection = section;
+        break;
+      }
+    }
+
+    if (matchedSection) {
+      currentSection = matchedSection;
     } else if (currentSection) {
       sections[currentSection].push(trimmedLine);
     }
