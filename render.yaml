@@ -8,5 +8,6 @@ services:
     healthCheckPath: /api/health
     buildCommand: |
       npm install
+      npm run build
       npx prisma generate --schema=./server/prisma/schema.prisma
-    startCommand: npm run start -w server
+    startCommand: npm start
