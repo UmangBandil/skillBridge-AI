@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: skillbridge-ai
+    env: node
+    repo: https://github.com/UmangBandil/skillBridge-AI
+    plan: free
+    branch: main
+    healthCheckPath: /api/health
+    buildCommand: |
+      npm install
+      npx prisma generate --schema=./server/prisma/schema.prisma
+    startCommand: npm run start -w server

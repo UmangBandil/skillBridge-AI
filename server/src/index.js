@@ -22,4 +22,4 @@ app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptim
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/portfolio", portfolioRoutes);
-app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 API on http://localhost:${PORT}`));
