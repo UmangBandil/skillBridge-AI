@@ -1,9 +1,3 @@
-/*
-  Warnings:
-
-  - The `embedding` column on the `Task` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-
-*/
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,

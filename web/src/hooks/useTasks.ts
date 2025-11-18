@@ -30,9 +30,12 @@ export function useTasks() {
   const del = async (id: string) => {
     await deleteTask(id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
+
+    // Reload tasks after deletion
+    await load();
   };
 
   useEffect(() => { load(); }, []);
 
-  return { tasks, loading, add, start, complete, del };
+  return { tasks, loading, add, start, complete, del, load };
 }

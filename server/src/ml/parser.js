@@ -6,14 +6,14 @@ export const parseResume = (text) => {
     hobbies: [],
   };
 
-  const lines = text.split("\n");
+  const lines = text.split('\n');
   let currentSection = null;
 
   const sectionKeywords = {
-    skills: ["skills", "abilities"],
-    education: ["education", "academic"],
-    experience: ["experience", "work", "professional"],
-    hobbies: ["hobbies", "interests"],
+    skills: ['skills', 'abilities'],
+    education: ['education', 'academic'],
+    experience: ['experience', 'work', 'professional'],
+    hobbies: ['hobbies', 'interests'],
   };
 
   for (const line of lines) {
@@ -21,17 +21,30 @@ export const parseResume = (text) => {
     if (trimmedLine.length === 0) continue;
 
     const lowerLine = trimmedLine.toLowerCase();
-    let matchedSection = null;
+    let isSectionHeader = false;
+    let newSection = null;
 
-    for (const [section, keywords] of Object.entries(sectionKeywords)) {
-      if (keywords.some(keyword => lowerLine.includes(keyword))) {
-        matchedSection = section;
-        break;
+    for (const section in sectionKeywords) {
+      for (const keyword of sectionKeywords[section]) {
+        if (lowerLine.startsWith(keyword)) {
+          newSection = section;
+          isSectionHeader = true;
+          break;
+        }
       }
+      if (isSectionHeader) break;
     }
 
-    if (matchedSection) {
-      currentSection = matchedSection;
+    if (isSectionHeader) {
+      currentSection = newSection;
+      const colonIndex = trimmedLine.indexOf(':');
+      if (colonIndex !== -1) {
+        const content = trimmedLine.substring(colonIndex + 1).trim();
+        if (content) {
+          sections[currentSection].push(content);
+        }
+      }
+      // If no colon, assume the whole line is a header, and content is on next lines
     } else if (currentSection) {
       sections[currentSection].push(trimmedLine);
     }

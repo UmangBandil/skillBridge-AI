@@ -6,9 +6,10 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w web\"",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd web && npm run dev\"",
     "start": "npm start -w server",
-    "build": "npm run build -w web"
+    "build": "npm run build -w web",
+    "test": "npm test -w web"
   },
   "workspaces": [
     "server",

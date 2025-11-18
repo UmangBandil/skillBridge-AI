@@ -19,7 +19,8 @@ router.get("/", async (_req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    const taskId = parseInt(req.params.id, 10);
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
@@ -60,9 +61,10 @@ router.post("/", protect, async (req, res) => {
 
 router.put("/:id", protect, async (req, res) => {
   try {
+    const taskId = parseInt(req.params.id, 10);
     const { status } = req.body;
     const updatedTask = await prisma.task.update({
-      where: { id: req.params.id },
+      where: { id: taskId },
       data: { status },
     });
     res.json(updatedTask);
@@ -74,7 +76,8 @@ router.put("/:id", protect, async (req, res) => {
 
 router.delete("/:id", protect, async (req, res) => {
   try {
-    await prisma.task.delete({ where: { id: req.params.id } });
+    const taskId = parseInt(req.params.id, 10);
+    await prisma.task.delete({ where: { id: taskId } });
     res.status(204).send();
   } catch (error) {
     console.error(error);

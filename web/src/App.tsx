@@ -8,6 +8,7 @@ import { SignIn } from "./pages/SignIn/SignIn";
 import { SignUp } from "./pages/SignUp/SignUp";
 import { Recruiter } from "./pages/Recruiter/Recruiter";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { NotFound } from "./pages/NotFound/NotFound";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
       </Route>
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

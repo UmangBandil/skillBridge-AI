@@ -2,7 +2,6 @@ services:
   - type: web
     name: skillbridge-ai
     env: node
-    repo: https://github.com/UmangBandil/skillBridge-AI
     plan: free
     branch: main
     healthCheckPath: /api/health
