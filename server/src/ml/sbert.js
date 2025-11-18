@@ -1,10 +1,11 @@
 import { AutoTokenizer } from '@xenova/transformers';
 import { InferenceSession, Tensor } from "onnxruntime-node";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const session = await InferenceSession.create(path.join(__dirname, "sbert.onnx"));
+const session = await InferenceSession.create(path.resolve(__dirname, "sbert.onnx"));
 const tokenizer = await AutoTokenizer.from_pretrained('Xenova/all-MiniLM-L6-v2');
 
 
