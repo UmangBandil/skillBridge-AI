@@ -1,7 +1,7 @@
 
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAnalytics, isSupported as analyticsIsSupported } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,7 +14,22 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Ensure singleton app instance (prevents duplicate initialization with HMR)
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// Safely initialize Analytics only in the browser and when supported
+let analytics: ReturnType<typeof getAnalytics> | undefined;
+if (typeof window !== "undefined" && firebaseConfig.measurementId) {
+  analyticsIsSupported()
+    .then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    })
+    .catch(() => {
+      // ignore analytics init errors (e.g., unsupported env)
+    });
+}
 
 export default app;
+export { analytics };

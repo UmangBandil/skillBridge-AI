@@ -13,24 +13,56 @@ export const Portfolio = () => {
   const [resumeText, setResumeText] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.displayName) {
-        setName(userData.displayName);
+    try {
+      const user = localStorage.getItem("user");
+      if (user) {
+        const userData = JSON.parse(user);
+        if (userData.displayName) {
+          setName(userData.displayName);
+        }
       }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      // Continue with default name if there's an error
     }
   }, []);
 
   const handleMatch = async (resume: string) => {
     setResumeText(resume);
-    const res = await fetch("/api/tasks/match", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resume }),
-    });
-    const data = await res.json();
-    setResults(data);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/tasks/match", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ resume }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to match tasks' }));
+        throw new Error(errorData.error || 'Failed to match tasks');
+      }
+
+      const data = await res.json();
+      // Format skills as arrays
+      const formattedData = data.map((task: any) => ({
+        ...task,
+        skills: Array.isArray(task.skills) 
+          ? task.skills 
+          : (task.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+      }));
+      setResults(formattedData);
+    } catch (err: any) {
+      console.error('Error matching tasks:', err);
+      setResults([]);
+    }
   };
 
   return (

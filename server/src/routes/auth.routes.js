@@ -9,12 +9,25 @@ const prisma = new PrismaClient();
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, name } = req.body;
-
     if (!email || !password || !name) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedName = String(name).trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ error: "Invalid email" });
+    }
+    if (normalizedName.length < 2) {
+      return res.status(400).json({ error: "Invalid name" });
+    }
+    if (typeof password !== "string" || password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
@@ -22,15 +35,19 @@ router.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
-        name,
+        name: normalizedName,
       },
     });
 
-    res.status(201).json(user);
+    // Do not return password hash
+    res.status(201).json({ id: user.id, email: user.email, name: user.name });
   } catch (error) {
     console.error(error);
+    if (error?.code === "P2002") {
+      return res.status(400).json({ error: "User already exists" });
+    }
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -43,7 +60,13 @@ router.post("/signin", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -53,7 +76,13 @@ router.post("/signin", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: "Server misconfiguration" });
+    }
+    const expiresIn = process.env.JWT_EXPIRES_IN || "1h";
+
+    const token = jwt.sign({ userId: user.id }, secret, { expiresIn });
 
     res.json({ token });
   } catch (error) {

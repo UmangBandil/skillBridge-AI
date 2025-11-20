@@ -18,9 +18,17 @@ export const ResumeDrop = ({ onUpload }: ResumeDropProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
-        onUpload(content);
+        if (content) {
+          onUpload(content);
+        }
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        alert('Error reading file. Please try again.');
       };
       reader.readAsText(file);
+    } else {
+      alert('Please select a file first');
     }
   };
 

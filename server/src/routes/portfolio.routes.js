@@ -9,14 +9,48 @@ const prisma = new PrismaClient();
 // @access  Private
 router.put("/", protect, async (req, res) => {
   const { portfolio } = req.body;
+
+  // Validate and normalize portfolio payload (accepts JSON object or JSON string)
+  if (portfolio === undefined) {
+    return res.status(400).json({ error: "portfolio is required" });
+  }
+
+  let portfolioData;
+  if (typeof portfolio === "string") {
+    try {
+      portfolioData = JSON.parse(portfolio);
+    } catch {
+      return res.status(400).json({ error: "portfolio must be valid JSON" });
+    }
+  } else if (typeof portfolio === "object" && portfolio !== null) {
+    portfolioData = portfolio;
+  } else {
+    return res.status(400).json({ error: "portfolio must be an object or JSON string" });
+  }
+
+  // Optional payload size guard (~100KB)
+  const portfolioSize = Buffer.byteLength(JSON.stringify(portfolioData), "utf8");
+  if (portfolioSize > 100_000) {
+    return res.status(413).json({ error: "portfolio payload too large" });
+  }
+
   try {
+    // Support both req.user.userId and req.user.id for consistency with other routes
+    const userId = req?.user?.userId ?? req?.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { portfolio },
+      where: { id: userId },
+      data: { portfolio: portfolioData },
     });
     res.json(user);
   } catch (error) {
     console.error(error);
+    if (error?.code === "P2025") {
+      return res.status(404).json({ error: "User not found" });
+    }
     res.status(500).json({ error: "Something went wrong" });
   }
 });

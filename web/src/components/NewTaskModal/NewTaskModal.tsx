@@ -24,6 +24,8 @@ export const NewTaskModal = ({ open, onClose, onCreate }: Props) => {
   };
 
   const handleSubmit = async () => {
+    setError(null); // Clear previous errors
+    
     // Basic validation
     if (!title || !description || !skills || !budget) {
       setError('All fields are required.');
@@ -37,13 +39,36 @@ export const NewTaskModal = ({ open, onClose, onCreate }: Props) => {
       budget,
     };
 
+    console.log('Submitting task:', taskData);
+
     try {
+      setError(null); // Clear any previous errors
       const createdTask = await createTask(taskData);
+      console.log('Task created:', createdTask);
       onCreate(createdTask); // Pass the newly created task up to the parent component
       resetForm();
       onClose();
-    } catch (err) {
-      setError((err as Error).message || 'An unknown error occurred.');
+    } catch (err: any) {
+      console.error('Error creating task:', err);
+      let errorMessage = 'An unknown error occurred. Please try again.';
+      
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.error) {
+        errorMessage = err.error;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      // Check if it's a connection error
+      if (errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('network') || 
+          errorMessage.includes('localhost') ||
+          errorMessage.includes('ECONNREFUSED')) {
+        errorMessage = 'Cannot connect to server. Please make sure the backend is running on http://localhost:4000';
+      }
+      
+      setError(errorMessage);
     }
   };
 

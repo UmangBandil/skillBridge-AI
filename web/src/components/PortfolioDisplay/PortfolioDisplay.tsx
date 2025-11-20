@@ -51,27 +51,39 @@ export const PortfolioDisplay = ({ resumeText }: { resumeText: string }) => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="p-4 border rounded-md">
           <h4 className="font-semibold text-lg mb-2">Skills</h4>
-          <ul className="list-disc list-inside">
-            {parsedResume.skills.map((skill: string, i: number) => (
-              <li key={i}>{skill}</li>
-            ))}
-          </ul>
+          {parsedResume.skills && parsedResume.skills.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {parsedResume.skills.map((skill: string, i: number) => (
+                <li key={i}>{skill}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No skills found</p>
+          )}
         </div>
         <div className="p-4 border rounded-md">
           <h4 className="font-semibold text-lg mb-2">Education</h4>
-          <ul className="list-disc list-inside">
-            {parsedResume.education.map((edu: string, i: number) => (
-              <li key={i}>{edu}</li>
-            ))}
-          </ul>
+          {parsedResume.education && parsedResume.education.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {parsedResume.education.map((edu: string, i: number) => (
+                <li key={i}>{edu}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No education found</p>
+          )}
         </div>
         <div className="p-4 border rounded-md">
           <h4 className="font-semibold text-lg mb-2">Hobbies</h4>
-          <ul className="list-disc list-inside">
-            {parsedResume.hobbies.map((hobby: string, i: number) => (
-              <li key={i}>{hobby}</li>
-            ))}
-          </ul>
+          {parsedResume.hobbies && parsedResume.hobbies.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {parsedResume.hobbies.map((hobby: string, i: number) => (
+                <li key={i}>{hobby}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No hobbies found</p>
+          )}
         </div>
       </div>
     </div>
