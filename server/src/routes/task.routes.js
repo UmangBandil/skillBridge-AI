@@ -3,9 +3,125 @@ import { PrismaClient } from "@prisma/client";
 import { embed, rankTasks } from "../ml/matcher.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { parseResume } from "../ml/parser.js";
+import { extractTextFromPDF, validatePDF, getFileSizeMB } from "../utils/pdfExtractor.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// @route   POST /tasks/upload
+// @desc    Upload and parse a resume file (PDF or TXT)
+// @access  Private
+router.post("/upload", protect, (req, res, next) => {
+  const upload = req.app.locals.upload;
+  if (!upload) {
+    return res.status(500).json({ error: "Upload service not configured" });
+  }
+  
+  upload.single('resume')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || "File upload failed" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file provided" });
+    }
+
+    try {
+      let resumeText = "";
+      const filename = req.file.originalname;
+      const mimetype = req.file.mimetype;
+
+      console.log(`[UPLOAD] Processing file: ${filename}, size: ${req.file.size} bytes, type: ${mimetype}`);
+
+      // Handle PDF files
+      if (mimetype === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+        if (!validatePDF(req.file.buffer, filename)) {
+          return res.status(400).json({ error: "Invalid PDF file - does not have valid PDF structure" });
+        }
+
+        const fileSizeMB = getFileSizeMB(req.file.buffer);
+        if (fileSizeMB > 10) {
+          return res.status(413).json({ error: "File too large. Maximum size is 10MB." });
+        }
+
+        try {
+          console.log(`[UPLOAD] Extracting text from PDF...`);
+          resumeText = await extractTextFromPDF(req.file.buffer);
+          console.log(`[UPLOAD] Successfully extracted ${resumeText.length} characters from PDF`);
+        } catch (pdfError) {
+          console.error('[UPLOAD] PDF extraction error:', pdfError.message);
+          return res.status(400).json({ 
+            error: pdfError.message,
+            details: "Please ensure the PDF contains text content (not just images). " +
+                     "If this is a scanned PDF, please convert it to a text-based format first."
+          });
+        }
+      }
+      // Handle text files
+      else if (mimetype === 'text/plain' || filename.toLowerCase().endsWith('.txt')) {
+        try {
+          resumeText = req.file.buffer.toString('utf-8');
+          console.log(`[UPLOAD] Successfully read ${resumeText.length} characters from text file`);
+        } catch (textError) {
+          console.error('[UPLOAD] Text file reading error:', textError.message);
+          return res.status(400).json({ 
+            error: "Failed to read text file",
+            details: textError.message 
+          });
+        }
+      }
+      else {
+        return res.status(400).json({ 
+          error: "Unsupported file type. Only PDF and TXT files are allowed.",
+          receivedType: mimetype,
+          filename: filename
+        });
+      }
+
+      if (!resumeText || resumeText.trim().length === 0) {
+        return res.status(400).json({ 
+          error: "Extracted file content is empty",
+          details: "The file contains no readable text. Please provide a text-based resume."
+        });
+      }
+
+      // Parse the resume
+      console.log(`[UPLOAD] Parsing resume...`);
+      const parsedResume = parseResume(resumeText);
+      console.log(`[UPLOAD] Resume parsed - found ${parsedResume.skillCount} skills`);
+
+      // Return parsed data
+      res.json({
+        success: true,
+        filename: filename,
+        fileSize: (req.file.size / 1024).toFixed(2) + " KB",
+        extractedTextLength: resumeText.length,
+        extractedText: resumeText,
+        data: {
+          skills: parsedResume.skills || [],
+          skillCount: parsedResume.skillCount || 0,
+          education: parsedResume.education || [],
+          hasEducation: parsedResume.hasEducation || false,
+          experience: parsedResume.experience || [],
+          hasExperience: parsedResume.hasExperience || false,
+          contact: {
+            email: parsedResume.contact?.email || null,
+            phone: parsedResume.contact?.phone || null,
+            linkedin: parsedResume.contact?.linkedin || null,
+            github: parsedResume.contact?.github || null,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("[UPLOAD] Unexpected error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to process resume file",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+  });
+});
 
 router.get("/", async (req, res) => {
   try {
@@ -215,5 +331,49 @@ router.post("/match", protect, async (req, res) => {
   }
 });
 
+// @route   POST /tasks/parse
+// @desc    Parse a resume and return structured data (skills, experience, education, etc.)
+// @access  Private
+router.post("/parse", protect, async (req, res) => {
+  try {
+    const { resume } = req.body;
+    if (!resume || typeof resume !== "string") {
+      return res.status(400).json({ error: "resume is required" });
+    }
+    
+    if (resume.length === 0 || resume.trim().length === 0) {
+      return res.status(400).json({ error: "resume cannot be empty" });
+    }
+    
+    // Parse the resume
+    const parsedResume = parseResume(resume);
+    
+    // Return structured data
+    res.json({
+      success: true,
+      data: {
+        skills: parsedResume.skills || [],
+        skillCount: parsedResume.skillCount || 0,
+        education: parsedResume.education || [],
+        hasEducation: parsedResume.hasEducation || false,
+        experience: parsedResume.experience || [],
+        hasExperience: parsedResume.hasExperience || false,
+        contact: {
+          email: parsedResume.contact?.email || null,
+          phone: parsedResume.contact?.phone || null,
+          linkedin: parsedResume.contact?.linkedin || null,
+          github: parsedResume.contact?.github || null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error parsing resume:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to parse resume",
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
 
 export default router;

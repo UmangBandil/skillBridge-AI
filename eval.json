@@ -1,5 +1,0 @@
-[
-  {"sentence1": "I have experience with machine learning and NLP.", "sentence2": "Apply machine learning to natural language processing tasks.", "label": 0.95},
-  {"sentence1": "I am a front-end developer with expertise in Vue.js.", "sentence2": "Develop a web interface using Vue.js.", "label": 0.88},
-  {"sentence1": "I know how to use photoshop", "sentence2": "Design a new logo for our company brand.", "label": 0.50}
-]
