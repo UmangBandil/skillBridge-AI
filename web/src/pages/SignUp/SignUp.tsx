@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export const SignUp = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [role, setRoleState] = useState('student');
   const navigate = useNavigate();
+  const { setIsAuthenticated, setRole } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +21,7 @@ export const SignUp = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
 
       if (!response.ok) {
@@ -41,7 +44,17 @@ export const SignUp = () => {
 
       const data = await signInResponse.json();
       localStorage.setItem('token', data.token);
-      navigate('/tasks');
+      if (data.role) {
+        localStorage.setItem('role', data.role);
+        setRole(data.role);
+      }
+      setIsAuthenticated(true);
+
+      if (data.role === 'recruiter') {
+        navigate('/recruiter');
+      } else {
+        navigate('/tasks');
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -93,6 +106,29 @@ export const SignUp = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+        </div>
+        <div className="mb-6 flex gap-4 items-center">
+          <label className="text-sm font-bold">Role: </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="role"
+              value="student"
+              checked={role === 'student'}
+              onChange={(e) => setRoleState(e.target.value)}
+            />
+            Student
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="role"
+              value="recruiter"
+              checked={role === 'recruiter'}
+              onChange={(e) => setRoleState(e.target.value)}
+            />
+            Recruiter
+          </label>
         </div>
         <button
           className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"

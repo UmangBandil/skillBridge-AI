@@ -118,6 +118,35 @@ function extractContact(text) {
   return contact;
 }
 
+const SECTION_HEADERS = [
+  'summary', 'objective', 'profile', 'about',
+  'experience', 'employment', 'work history', 'professional', 'career',
+  'education', 'academic', 'degree', 'certification', 'qualifications',
+  'skills', 'technologies', 'expertise', 'competencies',
+  'projects', 'portfolio',
+  'languages', 'interests', 'hobbies', 'awards', 'honors', 'publications'
+];
+
+/**
+ * Determine if a line is likely a section header
+ */
+function isSectionHeader(line) {
+  const trimmed = line.trim();
+  // Too long or empty means not a header
+  if (trimmed.length === 0 || trimmed.split(' ').length > 5) return false;
+  
+  // Header if all caps (allow spaces and ampersands)
+  if (/^[A-Z][A-Z\s&]+$/.test(trimmed)) return true;
+  
+  // Header if it ends with colon
+  if (trimmed.endsWith(':')) return true;
+  
+  // Header if exactly matches known sections
+  if (SECTION_HEADERS.includes(trimmed.toLowerCase())) return true;
+  
+  return false;
+}
+
 /**
  * Extract education information
  * @param {string} text - The resume text
@@ -126,31 +155,26 @@ function extractContact(text) {
 function extractEducation(text) {
   const education = [];
   const lines = text.split('\n');
+  const educationKeywords = ['education', 'academic', 'certification', 'qualifications'];
   
-  const educationKeywords = ['education', 'academic', 'degree', 'bachelor', 'master', 'phd', 'certification'];
   let inEducationSection = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const lowerLine = line.toLowerCase();
+    if (!line) continue;
     
-    // Check if this is an education section header
-    if (educationKeywords.some(keyword => lowerLine.includes(keyword) && line.endsWith(':'))) {
-      inEducationSection = true;
+    // Detect header boundary
+    if (isSectionHeader(line)) {
+      if (educationKeywords.some(k => line.toLowerCase().includes(k))) {
+        inEducationSection = true;
+      } else {
+        inEducationSection = false; // Prevents "bleeding" into other sections
+      }
       continue;
     }
     
-    // Check if we're entering a new section
-    if (inEducationSection && line.endsWith(':') && !educationKeywords.some(k => lowerLine.includes(k))) {
-      inEducationSection = false;
-    }
-    
-    // Collect education entries
-    if (inEducationSection && line.length > 0) {
-      // Look for common degree patterns
-      if (/bachelor|master|phd|degree|b\.?sc|m\.?sc|b\.?a|m\.?a|btech|mtech|diploma|associate/i.test(line)) {
-        education.push(line);
-      }
+    if (inEducationSection) {
+      education.push(line);
     }
   }
   
@@ -165,39 +189,26 @@ function extractEducation(text) {
 function extractExperience(text) {
   const experience = [];
   const lines = text.split('\n');
+  const experienceKeywords = ['experience', 'employment', 'work history', 'professional', 'career'];
   
-  const experienceKeywords = ['experience', 'work experience', 'employment', 'professional', 'career'];
   let inExperienceSection = false;
-  let lineSinceHeader = 0;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const lowerLine = line.toLowerCase();
+    if (!line) continue;
     
-    // Check if this is an experience section header
-    if (experienceKeywords.some(keyword => lowerLine.includes(keyword) && line.endsWith(':'))) {
-      inExperienceSection = true;
-      lineSinceHeader = 0;
+    // Detect header boundary
+    if (isSectionHeader(line)) {
+      if (experienceKeywords.some(k => line.toLowerCase().includes(k))) {
+        inExperienceSection = true;
+      } else {
+        inExperienceSection = false; // Prevents "bleeding"
+      }
       continue;
     }
     
-    // Check if we're entering a new section (when we hit another uppercase header)
-    if (inExperienceSection && line && line[0] === line[0].toUpperCase() && line.endsWith(':') && 
-        !experienceKeywords.some(k => lowerLine.includes(k))) {
-      inExperienceSection = false;
-    }
-    
-    // Collect experience entries
-    if (inExperienceSection && line.length > 0 && lineSinceHeader > 0) {
-      // Look for job titles or company names (usually lines with | or date patterns or key job-related words)
-      if (/[0-9]{4}|engineer|developer|manager|lead|specialist|analyst|architect|director|coordinator|consultant|designer|founder|ceo|cto|vp\b|vice president/i.test(line)
-          || line.includes('|') || /^[A-Z][A-Za-z\s]+$/.test(line)) {
-        experience.push(line);
-      }
-    }
-    
     if (inExperienceSection) {
-      lineSinceHeader++;
+      experience.push(line);
     }
   }
   

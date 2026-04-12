@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   name      String?
   password  String
+  role      String   @default("student")
   stripeAccountId String?
   portfolio Json?
   tasks     Task[]

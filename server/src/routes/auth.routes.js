@@ -8,10 +8,13 @@ const prisma = new PrismaClient();
 
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, role } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const validRoles = ["student", "recruiter"];
+    const normalizedRole = validRoles.includes(role) ? role : "student";
 
     const normalizedEmail = String(email).toLowerCase().trim();
     const normalizedName = String(name).trim();
@@ -38,11 +41,12 @@ router.post("/signup", async (req, res) => {
         email: normalizedEmail,
         password: hashedPassword,
         name: normalizedName,
+        role: normalizedRole,
       },
     });
 
     // Do not return password hash
-    res.status(201).json({ id: user.id, email: user.email, name: user.name });
+    res.status(201).json({ id: user.id, email: user.email, name: user.name, role: user.role });
   } catch (error) {
     console.error(error);
     if (error?.code === "P2002") {
@@ -82,9 +86,9 @@ router.post("/signin", async (req, res) => {
     }
     const expiresIn = process.env.JWT_EXPIRES_IN || "1h";
 
-    const token = jwt.sign({ userId: user.id }, secret, { expiresIn });
+    const token = jwt.sign({ userId: user.id, role: user.role }, secret, { expiresIn });
 
-    res.json({ token });
+    res.json({ token, role: user.role });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

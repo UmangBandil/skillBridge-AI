@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export const NavBar = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, role } = useAuth();
 
   return (
     <nav className="sticky top-4 z-50 max-w-5xl mx-auto glass p-4 rounded-2xl shadow-lg">
@@ -16,10 +16,16 @@ export const NavBar = () => {
           </div>
         <div className="hidden md:flex items-center gap-6">
           <NavLink to="/" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Home</NavLink>
-          <NavLink to="/tasks" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Tasks</NavLink>
-          <NavLink to="/portfolio" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Portfolio</NavLink>
-          <NavLink to="/match" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Match</NavLink>
-          <NavLink to="/recruiter" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Recruiter</NavLink>
+          {(!role || role === 'student') && (
+            <>
+              <NavLink to="/tasks" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Tasks</NavLink>
+              <NavLink to="/portfolio" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Portfolio</NavLink>
+              <NavLink to="/match" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Match</NavLink>
+            </>
+          )}
+          {role === 'recruiter' && (
+            <NavLink to="/recruiter" className={({ isActive }) => (isActive ? "gradient-text font-bold" : "text-foreground/60 hover:text-foreground transition")}>Recruiter</NavLink>
+          )}
         </div>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
