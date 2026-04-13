@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 // Comprehensive list of common technical and professional skills
 const SKILL_KEYWORDS = {
   // Programming Languages
@@ -216,11 +218,11 @@ function extractExperience(text) {
 }
 
 /**
- * Parse resume text and extract structured information
+ * Fallback to parse resume text and extract structured information using heuristics
  * @param {string} text - The raw resume text
  * @returns {object} - Parsed resume data with sections
  */
-export const parseResume = (text) => {
+export const parseResumeFallback = (text) => {
   if (!text || typeof text !== 'string') {
     return {
       skills: [],
@@ -246,4 +248,88 @@ export const parseResume = (text) => {
     hasExperience: experience.length > 0,
     hasEducation: education.length > 0,
   };
+};
+
+/**
+ * Parse resume text and extract structured information using GenAI
+ * @param {string} text - The raw resume text
+ * @returns {Promise<object>} - Parsed resume data with sections
+ */
+export const parseResume = async (text) => {
+  if (!text || typeof text !== 'string') {
+    return {
+      skills: [],
+      education: [],
+      experience: [],
+      contact: {},
+      rawtext: '',
+      skillCount: 0,
+      hasExperience: false,
+      hasEducation: false,
+    };
+  }
+
+  try {
+    // If no OpenAI key is available, use fallback directly
+    if (!process.env.OPENAI_API_KEY) {
+      console.log("[Parser] No OPENAI_API_KEY found, using fallback parser");
+      return parseResumeFallback(text);
+    }
+
+    console.log("[Parser] Using OpenAI GenAI for resume extraction...");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert resume parser. Extract the following information from the provided resume text and return it as a JSON object with this exact structure:
+{
+  "skills": ["skill1", "skill2"], // array of lowercased skill keywords (e.g. "javascript", "react", "python", "project management", "machine learning")
+  "education": ["edu detail 1", "edu detail 2"], // array of strings detailing education history
+  "experience": ["experience entry 1", "experience entry 2"], // array of strings detailing work experience
+  "contact": {
+    "email": "email@example.com", // string or null
+    "phone": "phone number", // string or null 
+    "linkedin": "linkedin url", // string or null
+    "github": "github url" // string or null
+  }
+}`
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ]
+    });
+
+    const parsedData = JSON.parse(response.choices[0].message.content);
+    
+    const skills = Array.isArray(parsedData.skills) ? parsedData.skills.map(s => s.toLowerCase()) : [];
+    const education = Array.isArray(parsedData.education) ? parsedData.education : [];
+    const experience = Array.isArray(parsedData.experience) ? parsedData.experience : [];
+    const contact = parsedData.contact || {};
+
+    return {
+      skills,
+      education,
+      experience,
+      contact: {
+        email: contact.email || null,
+        phone: contact.phone || null,
+        linkedin: contact.linkedin || null,
+        github: contact.github || null,
+      },
+      rawtext: text.substring(0, 2000),
+      skillCount: skills.length,
+      hasExperience: experience.length > 0,
+      hasEducation: education.length > 0,
+    };
+
+  } catch (error) {
+    console.error("[Parser] OpenAI GenAI parsing failed, using fallback:", error.message);
+    return parseResumeFallback(text);
+  }
 };

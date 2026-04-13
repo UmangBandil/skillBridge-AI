@@ -2,7 +2,7 @@ import { parseResume } from './server/src/ml/parser.js';
 import fs from 'fs';
 
 const resumeText = fs.readFileSync('./test-resume.txt', 'utf8');
-const parsed = parseResume(resumeText);
+const parsed = await parseResume(resumeText);
 
 console.log('--- Parsed Resume ---');
 console.log('Skills:', parsed.skills);

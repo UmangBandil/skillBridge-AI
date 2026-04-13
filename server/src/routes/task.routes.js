@@ -87,7 +87,7 @@ router.post("/upload", protect, (req, res, next) => {
 
       // Parse the resume
       console.log(`[UPLOAD] Parsing resume...`);
-      const parsedResume = parseResume(resumeText);
+      const parsedResume = await parseResume(resumeText);
       console.log(`[UPLOAD] Resume parsed - found ${parsedResume.skillCount} skills`);
 
       // Return parsed data
@@ -309,7 +309,7 @@ router.post("/match", protect, async (req, res) => {
     if (!resume || typeof resume !== "string") {
       return res.status(400).json({ error: "resume required" });
     }
-    const parsedResume = parseResume(resume);
+    const parsedResume = await parseResume(resume);
     const tasks = await prisma.task.findMany({
       where: { status: "open" }, // Only match open tasks
     });
@@ -346,7 +346,7 @@ router.post("/parse", protect, async (req, res) => {
     }
     
     // Parse the resume
-    const parsedResume = parseResume(resume);
+    const parsedResume = await parseResume(resume);
     
     // Return structured data
     res.json({

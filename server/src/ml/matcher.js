@@ -1,5 +1,5 @@
 import pkg from 'ml-distance';
-const { cosine } = pkg;
+const cosine = pkg.similarity.cosine;
 import { embed } from '../embed.js';
 
 /**
@@ -44,7 +44,7 @@ export async function rankTasks(parsedResume, tasks) {
         
         return {
           ...t,
-          score: cosine(resumeVec, t.embedding || Array(768).fill(0)),
+          score: t.embedding ? cosine(resumeVec, t.embedding) : 0,
           matchedSkills: taskSkills.filter(skill => 
             skills.some(resumeSkill => 
               resumeSkill.toLowerCase().includes(skill.toLowerCase()) || 
