@@ -3,11 +3,9 @@ import { NavBar } from "./NavBar";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
 
 export const Layout = () => (
-  <div className="min-h-screen bg-background text-foreground">
+  <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
     <NavBar />
-    <main className="max-w-6xl mx-auto p-4">
-      <Outlet />
-    </main>
+    <Outlet />
     <ThemeToggle />
   </div>
 );

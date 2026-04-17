@@ -4,6 +4,32 @@ import { protect } from "../middleware/auth.middleware.js";
 const router = Router();
 const prisma = new PrismaClient();
 
+// @route   GET /api/portfolio
+// @desc    Get a user's portfolio
+// @access  Private
+router.get("/", protect, async (req, res) => {
+  try {
+    const userId = req?.user?.userId ?? req?.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { portfolio: true, name: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ portfolio: user.portfolio, name: user.name });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
 // @route   PUT /api/portfolio
 // @desc    Save a user's portfolio
 // @access  Private
@@ -45,7 +71,13 @@ router.put("/", protect, async (req, res) => {
       where: { id: userId },
       data: { portfolio: portfolioData },
     });
-    res.json(user);
+    
+    // Return only the necessary fields
+    res.json({ 
+      success: true,
+      portfolio: user.portfolio,
+      message: "Portfolio saved successfully" 
+    });
   } catch (error) {
     console.error(error);
     if (error?.code === "P2025") {

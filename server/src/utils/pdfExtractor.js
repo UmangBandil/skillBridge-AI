@@ -1,6 +1,11 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+// Set up PDF worker (required for pdfjs)
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Worker is in the root node_modules, not server/node_modules
+pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${path.join(__dirname, '../../../node_modules/pdfjs-dist/build/pdf.worker.mjs')}`;
 
 /**
  * Extract text from a PDF buffer with improved error handling
@@ -19,39 +24,50 @@ export async function extractTextFromPDF(pdfBuffer) {
   try {
     console.log(`[PDF] Starting extraction, buffer size: ${pdfBuffer.length} bytes`);
     
-    // Configure pdf-parse options for better text extraction
-    const options = {
-      max: 0, // 0 = no limit on pages
-      version: 'v2.4.456'
-    };
-    
-    const data = await pdfParse(pdfBuffer, options);
-    
-    console.log(`[PDF] Extraction completed`);
-    console.log(`[PDF] Pages: ${data.numpages}, Text length: ${data.text?.length || 0}`);
-    
-    if (!data) {
-      throw new Error('PDF parsing returned no data');
+    const { getDocument } = pdfjsLib;
+    if (!getDocument) {
+      throw new Error('pdfjs-dist getDocument not found');
     }
-
-    // Check if we got any text at all
-    if (!data.text || data.text.trim().length === 0) {
-      // This might be an image-based or scanned PDF
-      throw new Error(
-        'No text content found in PDF. This might be a scanned/image-based PDF. ' +
-        'Please convert it to a text-based PDF or provide a text version.'
-      );
+    
+    console.log('[PDF] Using pdfjs-dist legacy build to parse PDF');
+    
+    // Convert Buffer to Uint8Array (pdfjs-dist requires this)
+    const uint8Array = new Uint8Array(pdfBuffer);
+    
+    // Load the PDF document
+    const pdfDoc = await getDocument({ data: uint8Array }).promise;
+    
+    console.log(`[PDF] PDF loaded, pages: ${pdfDoc.numPages}`);
+    
+    let text = '';
+    
+    // Extract text from each page
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      try {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        // Combine text items
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        text += pageText + '\n';
+      } catch (pageError) {
+        console.warn(`[PDF] Error extracting page ${i}:`, pageError.message);
+        // Continue with next page
+      }
     }
-
+    
     // Clean up the extracted text
-    const text = data.text
+    text = text
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
       .join('\n');
 
     if (text.length === 0) {
-      throw new Error('Extracted text is empty after cleanup');
+      throw new Error(
+        'No text content found in PDF. This might be a scanned/image-based PDF. ' +
+        'Please convert it to a text-based PDF or provide a text version.'
+      );
     }
 
     console.log(`[PDF] Text extraction successful, ${text.length} characters extracted`);

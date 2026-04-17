@@ -1,17 +1,34 @@
 import { useState, useEffect } from "react";
 import { ResumeDrop } from "../../components/ResumeDrop/ResumeDrop";
-import { TaskCard } from "../../components/TaskCard/TaskCard";
 import { PortfolioDisplay } from "../../components/PortfolioDisplay/PortfolioDisplay";
 import { PortfolioInfo } from "../../components/PortfolioInfo/PortfolioInfo";
+
+interface ParsedResume {
+  skills: string[];
+  skillCount: number;
+  education: string[];
+  hasEducation: boolean;
+  experience: string[];
+  hasExperience: boolean;
+  contact: {
+    email: string | null;
+    phone: string | null;
+    linkedin: string | null;
+    github: string | null;
+  };
+}
 
 export const Portfolio = () => {
   const [name, setName] = useState("Your Name");
   const [address, setAddress] = useState("Your Address");
   const [skills, setSkills] = useState("Your Skills");
   const [hobbies, setHobbies] = useState("Your Hobbies");
-  const [results, setResults] = useState<any[]>([]);
+  const [parsedResumeData, setParsedResumeData] = useState<ParsedResume | null>(null);
   const [resumeText, setResumeText] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [extractedAddress, setExtractedAddress] = useState<string | null>(null);
 
+  // Load user data on mount
   useEffect(() => {
     try {
       const user = localStorage.getItem("user");
@@ -23,89 +40,205 @@ export const Portfolio = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      // Continue with default name if there's an error
     }
   }, []);
 
+  // Extract address from resume text
+  const extractAddressFromResume = (text: string): string | null => {
+    if (!text) return null;
+    
+    // Look for common address patterns - usually near the top with contact info
+    const lines = text.split('\n');
+    
+    // Common address indicators
+    for (let i = 0; i < Math.min(lines.length, 10); i++) {
+      const line = lines[i].trim();
+      // Look for lines with city, state, zip pattern or lines with commas (typical address format)
+      if ((line.match(/,/g) || []).length >= 1 && line.length > 10 && line.length < 100) {
+        // Check if it looks like an address (not an email or URL)
+        if (!line.includes('@') && !line.includes('http') && !line.includes('://')) {
+          return line;
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  const handleResumeParsed = (parsed: ParsedResume) => {
+    setParsedResumeData(parsed);
+    
+    // Try to extract address from resume text
+    if (resumeText) {
+      const foundAddress = extractAddressFromResume(resumeText);
+      if (foundAddress) {
+        setExtractedAddress(foundAddress);
+      }
+    }
+    
+    setSuccessMessage("Resume parsed successfully! Your profile has been updated.");
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
   const handleMatch = async (resume: string) => {
     setResumeText(resume);
-    try {
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    // Resume is saved to portfolio via ResumeDrop component
+  };
 
-      const res = await fetch("/api/tasks/match", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ resume }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to match tasks' }));
-        throw new Error(errorData.error || 'Failed to match tasks');
-      }
-
-      const data = await res.json();
-      // Format skills as arrays
-      const formattedData = data.map((task: any) => ({
-        ...task,
-        skills: Array.isArray(task.skills) 
-          ? task.skills 
-          : (task.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-      }));
-      setResults(formattedData);
-    } catch (err: any) {
-      console.error('Error matching tasks:', err);
-      setResults([]);
-    }
+  const handleUploadAgain = () => {
+    setParsedResumeData(null);
+    setResumeText(null);
+    setExtractedAddress(null);
   };
 
   return (
-    <div className="min-h-screen dark:bg-slate-900 text-white p-8">
-      <h2 className="text-5xl font-bold text-center mb-12 gradient-text">{name}</h2>
-      
-      <PortfolioInfo 
-        name={name} setName={setName} 
-        address={address} setAddress={setAddress} 
-        skills={skills} setSkills={setSkills} 
-        hobbies={hobbies} setHobbies={setHobbies} 
-      />
+    <div className="md:ml-20 min-h-screen bg-white dark:bg-slate-950">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 md:left-20 h-16 glass-effect z-30 flex items-center px-8 shadow-sm">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">My Portfolio</h1>
+      </header>
 
-      <div className="mt-12 p-8 border rounded-md">
-        <h3 className="text-2xl font-semibold mb-6">Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
-            <p><strong>Address:</strong> {address}</p>
-            <p><strong>Skills:</strong> {skills}</p>
-            <p><strong>Hobbies:</strong> {hobbies}</p>
+      {/* Main Content */}
+      <div className="pt-24 pb-12 px-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-8 p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 flex items-center gap-2">
+              <span className="material-symbols-outlined">check_circle</span>
+              {successMessage}
+            </div>
+          )}
+
+          {/* BEFORE RESUME UPLOAD - Show Profile Setup */}
+          {!parsedResumeData && (
+            <>
+              {/* Profile Header */}
+              <div className="mb-12">
+                <h2 className="text-4xl font-extrabold font-headline text-slate-900 dark:text-white mb-2">
+                  {name}
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Manage your profile and see personalized opportunities
+                </p>
+              </div>
+
+              {/* Profile Information Fields */}
+              <div className="mb-12">
+                <PortfolioInfo 
+                  name={name} 
+                  setName={setName} 
+                  address={address} 
+                  setAddress={setAddress} 
+                  skills={skills} 
+                  setSkills={setSkills} 
+                  hobbies={hobbies} 
+                  setHobbies={setHobbies} 
+                />
+              </div>
+
+              {/* Resume Upload Section */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 ghost-border">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
+                      upload_file
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold font-headline text-slate-900 dark:text-white mb-2">
+                      Upload Your Resume
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Upload your resume (PDF or TXT) to parse your skills, experience, and education. This helps us find better matches for you.
+                    </p>
+                  </div>
+                </div>
+                <ResumeDrop 
+                  onUpload={handleMatch} 
+                  onParsed={handleResumeParsed}
+                />
+              </div>
+            </>
+          )}
+
+          {/* AFTER RESUME UPLOAD - Show Parsed Data */}
+          {parsedResumeData && (
+            <div>
+              {/* Profile Header with Parsed Name */}
+              <div className="mb-12">
+                <h2 className="text-4xl font-extrabold font-headline text-slate-900 dark:text-white mb-2">
+                  {name}
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
+                  {extractedAddress || "Your resume has been uploaded"}
+                </p>
+              </div>
+
+              {/* Parsed Resume Data Card */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 ghost-border mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold font-headline text-slate-900 dark:text-white">
+                    Resume Information
+                  </h3>
+                  <button
+                    onClick={handleUploadAgain}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base">upload</span>
+                    Upload New Resume
+                  </button>
+                </div>
+
+                <PortfolioDisplay 
+                  resumeText={resumeText || undefined} 
+                  parsedData={parsedResumeData}
+                />
+              </div>
+
+              {/* Call to Action Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/10 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-200 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
+                      search
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold font-headline text-slate-900 dark:text-white mb-2">
+                      Ready to find opportunities?
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6">
+                      Your resume has been analyzed and saved. Visit the "Opportunities" tab to see AI-matched internships and tasks based on your skills.
+                    </p>
+                    <a
+                      href="/match?tab=my-matches"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    >
+                      <span className="material-symbols-outlined">arrow_forward</span>
+                      Browse Opportunities
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State - No Resume */}
+          {!parsedResumeData && !resumeText && (
+            <div className="mt-12 bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center">
+              <div className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600 mb-4 block">
+                description
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                No resume uploaded yet
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                Upload your resume above to get started with finding opportunities matched to your skills
+              </p>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="mt-12 text-center">
-        <p className="text-slate-400 text-lg">
-          Upload your resume to see your matched skills and tasks.
-        </p>
-        <div className="mt-4">
-            <ResumeDrop onUpload={handleMatch} />
-        </div>
-      </div>
-      
-      {resumeText && <PortfolioDisplay resumeText={resumeText} />}
-      
-      {results.length > 0 && (
-        <div className="mt-12">
-          <h3 className="text-3xl font-semibold mb-8 text-center gradient-text">Top Matches</h3>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {results.map((t) => (
-              <TaskCard key={t.id} task={t} onComplete={() => {}} onDelete={() => {}} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

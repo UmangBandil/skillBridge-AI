@@ -1,4 +1,7 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -70,4 +73,43 @@
     .gradient-text {
         @apply bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent;
     }
+    .glass-effect {
+      @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md;
+    }
+    .ghost-border {
+      @apply border border-slate-200/15 dark:border-slate-700/15;
+    }
   }
+
+/* Custom utilities */
+.card {
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm;
+}
+
+.card-hover {
+  @apply card transition-all hover:shadow-lg hover:-translate-y-1;
+}
+
+/* Material Symbols Icon */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-slate-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600;
+}
