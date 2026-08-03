@@ -44,7 +44,7 @@ export async function rankTasks(parsedResume, tasks) {
         
         return {
           ...t,
-          score: t.embedding ? cosine(resumeVec, t.embedding) : 0,
+          score: t.embedding ? cosine(Array.from(resumeVec), Array.from(t.embedding)) : 0,
           matchedSkills: taskSkills.filter(skill => 
             skills.some(resumeSkill => 
               resumeSkill.toLowerCase().includes(skill.toLowerCase()) || 

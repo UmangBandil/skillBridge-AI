@@ -11,7 +11,7 @@ export const protect = (req, res, next) => {
   const [, token] = bearer.split(" ");
 
   if (!token) {
-    console.log('Auth failed: No token in authorization header');
+    console.log('Auth failed: Malformed authorization header (no token)');
     return res.status(401).json({ error: "Not authorized" });
   }
 

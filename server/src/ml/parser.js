@@ -16,7 +16,7 @@ const SKILL_KEYWORDS = {
     'webpack', 'tailwind', 'bootstrap', 'material', 'jquery', 'backbone.js',
     'ember.js', 'preact', 'stimulus', 'solid.js', 'astro', 'qwik', 'htmx',
     'alpine.js', 'hotwire', 'pug', 'ejs', 'handlebars', 'enzyme', 'cypress',
-    'playwright', 'puppeteer', 'testing library', 'enzyme', 'mocha', 'jest'
+    'playwright', 'puppeteer', 'testing library', 'mocha', 'jest'
   ],
   
   // Back-end & Databases

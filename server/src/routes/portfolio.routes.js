@@ -61,7 +61,6 @@ router.put("/", protect, async (req, res) => {
   }
 
   try {
-    // Support both req.user.userId and req.user.id for consistency with other routes
     const userId = req?.user?.userId ?? req?.user?.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
