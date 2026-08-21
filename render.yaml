@@ -15,7 +15,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CLIENT_URL
-        sync: false
+        value: https://skillbridge-ai-0ddn.onrender.com
       - key: OPENAI_API_KEY
         sync: false
       - key: STRIPE_SECRET_KEY

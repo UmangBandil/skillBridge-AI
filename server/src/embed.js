@@ -1,8 +1,7 @@
 
-import { pipeline } from '@xenova/transformers';
-
-// Create a new pipeline instance
-// const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+// Dynamic import so the server starts even if @xenova/transformers is unavailable
+// (e.g. Render free tier 512MB RAM limit).
+let pipelineFn = null;
 
 // Lazy-memoized initialization to avoid top-level await and handle startup failures gracefully
 let embedderInstance;
@@ -19,7 +18,6 @@ async function getEmbedder() {
   }
   
   if (embedderInitializing) {
-    // Wait for initialization to complete
     while (embedderInitializing) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -32,7 +30,11 @@ async function getEmbedder() {
   embedderInitializing = true;
   try {
     console.log('Initializing embedding model (this may take a moment on first use)...');
-    embedderInstance = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    if (!pipelineFn) {
+      const mod = await import('@xenova/transformers');
+      pipelineFn = mod.pipeline;
+    }
+    embedderInstance = await pipelineFn('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
     console.log('Embedding model initialized successfully');
     embedderInitializing = false;
     return embedderInstance;
