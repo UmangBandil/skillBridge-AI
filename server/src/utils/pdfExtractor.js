@@ -46,9 +46,29 @@ export async function extractTextFromPDF(pdfBuffer) {
       try {
         const page = await pdfDoc.getPage(i);
         const textContent = await page.getTextContent();
-        
-        // Combine text items
-        const pageText = textContent.items.map(item => item.str).join(' ');
+
+        // Group text items into lines by their vertical position so line
+        // breaks survive extraction. Joining everything with spaces would
+        // flatten the whole page into one line and break the section-based
+        // resume parsing (education/experience detection relies on newlines).
+        const pageLines = [];
+        let currentLine = [];
+        let currentY = null;
+        for (const item of textContent.items) {
+          const y = item.transform ? item.transform[5] : 0;
+          if (currentY === null || Math.abs(y - currentY) <= 2) {
+            if (currentY === null) currentY = y;
+            currentLine.push(item.str);
+          } else {
+            pageLines.push(currentLine.join(' ').trim());
+            currentLine = [item.str];
+            currentY = y;
+          }
+        }
+        if (currentLine.length > 0) {
+          pageLines.push(currentLine.join(' ').trim());
+        }
+        const pageText = pageLines.filter((line) => line.length > 0).join('\n');
         text += pageText + '\n';
       } catch (pageError) {
         console.warn(`[PDF] Error extracting page ${i}:`, pageError.message);

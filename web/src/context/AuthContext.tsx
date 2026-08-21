@@ -6,10 +6,12 @@ export interface User {
   email?: string;
   displayName?: string;
   name?: string;
+  role?: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isHydrated: boolean;
   setIsAuthenticated: (isAuthenticated: boolean) => void;
   user: User | null;
   setUser: (user: User | null) => void;
@@ -37,6 +39,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  // True once the initial localStorage check has run, so ProtectedRoute
+  // doesn't redirect during the first render before auth state hydrates.
+  const [isHydrated, setIsHydrated] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setRole(null);
     }
+    setIsHydrated(true);
   }, []);
 
   const login = (userData: User, userRole?: string) => {
@@ -79,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, user, setUser, role, setRole, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isHydrated, setIsAuthenticated, user, setUser, role, setRole, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

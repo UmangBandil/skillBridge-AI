@@ -88,7 +88,11 @@ router.post("/signin", async (req, res) => {
 
     const token = jwt.sign({ userId: user.id, role: user.role }, secret, { expiresIn });
 
-    res.json({ token, role: user.role });
+    res.json({
+      token,
+      role: user.role,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

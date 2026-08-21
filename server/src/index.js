@@ -59,8 +59,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Use env-driven port with fallback
-const PORT = process.env.PORT ?? 4000;
+// Use env-driven port with fallback.
+// Note: some environments pre-set PORT=0 (meaning "pick a random port"),
+// which breaks the vite proxy that expects the server on 4000. Treat falsy
+// values as unset so we always bind to the configured port.
+const PORT = Number(process.env.PORT) || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

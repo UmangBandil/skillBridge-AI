@@ -20,6 +20,34 @@ export const Match = () => {
   // Fetch all available tasks on mount
   useEffect(() => {
     fetchAllTasks();
+
+    // If the user arrived from the Portfolio page CTA
+    // (/match?tab=my-matches), surface the stored match results.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "my-matches") {
+      const stored = localStorage.getItem("matchedTasks");
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          setMatchedTasks(
+            data.map((task: any) => ({
+              ...task,
+              matchScore:
+                typeof task.score === "number" ? task.score : undefined,
+              skills: Array.isArray(task.skills)
+                ? task.skills
+                : (task.skills || "")
+                    .split(",")
+                    .map((s: string) => s.trim())
+                    .filter(Boolean),
+            }))
+          );
+          setActiveTab("my-matches");
+        } catch (e) {
+          console.error("Failed to load stored matches:", e);
+        }
+      }
+    }
   }, []);
 
   const fetchAllTasks = async () => {
@@ -85,7 +113,8 @@ export const Match = () => {
       const data = await res.json();
       const formattedData = data.map((task: any) => ({
         ...task,
-        matchScore: 85 + Math.random() * 15,
+        // Server returns a cosine similarity in the 0..1 range
+        matchScore: typeof task.score === "number" ? task.score : undefined,
         skills: Array.isArray(task.skills) ? task.skills : (task.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean),
       }));
       setMatchedTasks(formattedData);
@@ -109,7 +138,8 @@ export const Match = () => {
   };
 
   const filteredMatches = matchedTasks.filter(task => {
-    if (filterScore === "high" && task.matchScore && task.matchScore < 90) return false;
+    // Scores are cosine similarities in the 0..1 range
+    if (filterScore === "high" && task.matchScore && task.matchScore < 0.6) return false;
     return true;
   });
 
@@ -305,7 +335,7 @@ export const Match = () => {
                             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
                             : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                         }`}>
-                        High Score (90%+)
+                        Strong Matches (60%+)
                       </button>
                     </div>
                   </div>
@@ -315,7 +345,7 @@ export const Match = () => {
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg ghost-border mb-8 hover:shadow-xl transition-shadow">
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
                         <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                          {Math.round(topMatch.matchScore || 85)}% Match
+                          {Math.max(0, Math.round((topMatch.matchScore || 0) * 100))}% Match
                         </span>
                         <span className="text-amber-600 dark:text-amber-400 text-xs font-bold px-3 py-1 bg-amber-50 dark:bg-amber-900/20 rounded-full uppercase">
                           Top Choice
@@ -358,7 +388,7 @@ export const Match = () => {
                             className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all hover:shadow-lg"
                           >
                             <span className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-2 block">
-                              {Math.round(task.matchScore || 85)}% Match
+                              {Math.max(0, Math.round((task.matchScore || 0) * 100))}% Match
                             </span>
                             <h3 className="text-lg font-bold font-headline text-slate-900 dark:text-white mb-3 line-clamp-2">
                               {task.title}
@@ -387,6 +417,8 @@ export const Match = () => {
         <TaskDetailsModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
+          onAccept={() => setSelectedTask(null)}
+          onDeny={() => setSelectedTask(null)}
         />
       )}
     </div>

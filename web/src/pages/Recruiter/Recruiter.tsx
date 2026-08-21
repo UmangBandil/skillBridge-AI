@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { Task } from "../../types";
+import { Task } from "../../services/api";
 
 export const Recruiter = () => {
   const { user } = useAuth();

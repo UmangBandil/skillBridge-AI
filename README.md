@@ -48,7 +48,12 @@ cp .env.example .env   # add DB_URL, STRIPE_KEY, OPENAI_KEY
 cd ../web
 cp .env.example .env
 
-# 5. Run the development servers
+# 5. (Optional) Seed demo micro-internships
+# From the server directory. Creates a demo recruiter account and 6 realistic
+# tasks with real SBERT embeddings. Idempotent — safe to re-run.
+cd server && npm run db:seed
+
+# 6. Run the development servers
 # From the root of the project
 npm run dev
 ```

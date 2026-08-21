@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { matchTasks, getPortfolio, savePortfolio, PortfolioPayload } from "../../services/api";
 import { ResumeDrop } from "../../components/ResumeDrop/ResumeDrop";
 import { PortfolioDisplay } from "../../components/PortfolioDisplay/PortfolioDisplay";
 import { PortfolioInfo } from "../../components/PortfolioInfo/PortfolioInfo";
@@ -65,9 +66,35 @@ export const Portfolio = () => {
     return null;
   };
 
-  const handleResumeParsed = (parsed: ParsedResume) => {
+  const handleResumeParsed = async (parsed: ParsedResume) => {
     setParsedResumeData(parsed);
-    
+
+    // Persist the parsed resume (skills, education, experience, contact) to
+    // the user's portfolio so the Home page skill profile is populated even
+    // before the AI match finishes.
+    try {
+      let existing: PortfolioPayload = {};
+      try {
+        const current = await getPortfolio();
+        if (current?.portfolio && typeof current.portfolio === "object") {
+          existing = current.portfolio as PortfolioPayload;
+        }
+      } catch (err) {
+        console.error("Failed to load existing portfolio:", err);
+      }
+
+      await savePortfolio({
+        ...existing,
+        skills: parsed.skills || [],
+        education: parsed.education || [],
+        experience: parsed.experience || [],
+        contact: parsed.contact || {},
+        lastResumeUpdatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Failed to save resume to portfolio:", err);
+    }
+
     // Try to extract address from resume text
     if (resumeText) {
       const foundAddress = extractAddressFromResume(resumeText);
@@ -82,7 +109,15 @@ export const Portfolio = () => {
 
   const handleMatch = async (resume: string) => {
     setResumeText(resume);
-    // Resume is saved to portfolio via ResumeDrop component
+    // Run the AI match and persist the results so the Match page can show
+    // them when the user follows the "Browse Opportunities" CTA.
+    try {
+      const matches = await matchTasks(resume);
+      localStorage.setItem("matchedTasks", JSON.stringify(matches));
+      localStorage.setItem("lastResume", resume);
+    } catch (err) {
+      console.error("Error matching tasks:", err);
+    }
   };
 
   const handleUploadAgain = () => {

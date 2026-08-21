@@ -1,33 +1,141 @@
 import { useAuth } from "../../hooks/useAuth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { listTasks, Task } from "../../services/api";
+
+interface MatchResult extends Task {
+  score?: number;
+  matchedSkills?: string[];
+}
+
+interface PortfolioData {
+  name?: string;
+  bio?: string;
+  skills?: string[];
+  [key: string]: unknown;
+}
 
 export const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [newMatches] = useState(4);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Extract first name from display name or email
-  const displayName = user?.displayName || "there";
+  const displayName = user?.name || user?.displayName || "there";
   const firstName = displayName.split(" ")[0];
 
-  const handleResumeUpload = () => {
-    navigate("/portfolio");
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  const handleViewAll = () => {
-    navigate("/tasks");
-  };
+    const load = async () => {
+      try {
+        const [taskData, portfolioRes] = await Promise.all([
+          listTasks(),
+          fetch("/api/portfolio", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }).catch(() => null),
+        ]);
 
-  const handleMatchClick = () => {
-    navigate("/match");
-  };
+        if (cancelled) return;
 
-  const handleApplicationClick = () => {
-    navigate("/tasks");
-  };
+        if (Array.isArray(taskData)) setTasks(taskData);
+
+        if (portfolioRes && portfolioRes.ok) {
+          const data = await portfolioRes.json();
+          if (data?.portfolio) setPortfolio(data.portfolio);
+        }
+      } catch (err) {
+        console.error("Error loading home data:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    // Matches are produced by the Portfolio page and persisted there
+    try {
+      const stored = localStorage.getItem("matchedTasks");
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (Array.isArray(data)) {
+          setMatches(
+            data
+              .map((t: any) => ({
+                ...t,
+                skills: Array.isArray(t.skills)
+                  ? t.skills
+                  : (t.skills || "")
+                      .split(",")
+                      .map((s: string) => s.trim())
+                      .filter(Boolean),
+              }))
+              .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load stored matches:", err);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleResumeUpload = () => navigate("/portfolio");
+  const handleViewAll = () => navigate("/match");
+  const handleMatchClick = () => navigate("/match?tab=my-matches");
+
+  // Real skills: matched skills from the resume match, falling back to the
+  // user's saved portfolio skills. Dedupe case-insensitively (the parser
+  // stores lowercase, task skills are title-cased) and collapse redundant
+  // shorter skills that are whole words inside a longer chip (e.g. "tailwind"
+  // inside "Tailwind CSS"), preferring the more specific spelling.
+  const skillSet = (() => {
+    const skills = [
+      ...matches.flatMap((m) => m.matchedSkills || []),
+      ...(Array.isArray(portfolio?.skills) ? (portfolio.skills as string[]) : []),
+    ];
+    const result: string[] = [];
+    for (const skill of skills) {
+      const lower = skill.toLowerCase().trim();
+      if (!lower) continue;
+      const words = lower.split(/\s+/);
+      // Case-insensitive exact duplicate
+      if (result.some((r) => r.toLowerCase() === lower)) continue;
+      // Fully contained (as a whole word) in an existing, longer chip
+      if (result.some((r) => r.toLowerCase().split(/\s+/).includes(lower))) continue;
+      // This chip contains an existing shorter one — replace it
+      const survivors = result.filter((r) => !words.includes(r.toLowerCase()));
+      if (survivors.length !== result.length) {
+        result.length = 0;
+        result.push(...survivors);
+      }
+      result.push(skill);
+    }
+    return result.slice(0, 10);
+  })();
+
+  const topMatches = matches.slice(0, 2);
+  const fallbackTasks = tasks.slice(0, 2);
+  const openTasks = [...tasks]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 4);
+
+  const resumeUploaded = Boolean(localStorage.getItem("lastResume")) || matches.length > 0;
+
+  const matchPercent = (score?: number) => Math.max(0, Math.round((score || 0) * 100));
 
   return (
     <div className="min-h-screen">
@@ -75,7 +183,26 @@ export const Home = () => {
             Welcome back, {firstName}.
           </h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl text-base font-body">
-            Your AI curator has identified <span className="text-emerald-600 dark:text-emerald-400 font-bold">{newMatches} new high-match</span> internship opportunities based on your recent activity.
+            {loading ? (
+              "Loading your opportunities..."
+            ) : matches.length > 0 ? (
+              <>
+                Your AI curator found{" "}
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  {matches.length} high-match
+                </span>{" "}
+                internship opportunities for your resume.
+              </>
+            ) : (
+              <>
+                There{" "}
+                {tasks.length === 1 ? "is" : "are"}{" "}
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  {tasks.length} open
+                </span>{" "}
+                micro-internship {tasks.length === 1 ? "opportunity" : "opportunities"} waiting for you.
+              </>
+            )}
           </p>
         </section>
 
@@ -88,22 +215,45 @@ export const Home = () => {
                 <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400">psychology</span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white font-headline">Skill Profile</h3>
               </div>
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full border border-emerald-200 dark:border-emerald-800">Neural Networks</span>
-                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full border border-emerald-200 dark:border-emerald-800">TypeScript</span>
-                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full border border-emerald-200 dark:border-emerald-800">UX Strategy</span>
-                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-800">Python</span>
-                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-800">Data Viz</span>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Technical Core</span>
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">88%</span>
+              {skillSet.length > 0 ? (
+                <>
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {skillSet.map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full border border-emerald-200 dark:border-emerald-800"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Skills Detected</span>
+                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{skillSet.length}</span>
+                    </div>
+                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, skillSet.length * 10)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+                    No skills yet. Upload your resume to build your skill profile and get matched.
+                  </p>
+                  <button
+                    onClick={handleResumeUpload}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base">upload</span>
+                    Upload Resume
+                  </button>
                 </div>
-                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600 dark:bg-blue-500 rounded-full" style={{ width: "88%" }}></div>
-                </div>
-              </div>
+              )}
             </div>
             {/* Decorative Element */}
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
@@ -111,53 +261,109 @@ export const Home = () => {
 
           {/* Top Matches Grid */}
           <div className="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Match 1 - Featured (Dark) */}
-            <div 
-              onClick={handleMatchClick}
-              className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-between group cursor-pointer transition-all hover:shadow-2xl hover:shadow-blue-600/30 transform hover:-translate-y-1"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md">
-                    <span className="material-symbols-outlined">rocket_launch</span>
+            {topMatches.length > 0 ? (
+              topMatches.map((task, i) => (
+                <div
+                  key={task.id}
+                  onClick={handleMatchClick}
+                  className={`${
+                    i === 0
+                      ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
+                      : "bg-white dark:bg-slate-800 ghost-border text-slate-900 dark:text-white"
+                  } p-6 rounded-2xl shadow-lg flex flex-col justify-between group cursor-pointer transition-all hover:shadow-2xl ${
+                    i === 0 ? "hover:shadow-blue-600/30" : "hover:shadow-xl"
+                  } transform hover:-translate-y-1`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`p-2 rounded-lg ${i === 0 ? "bg-white/10 backdrop-blur-md" : "bg-slate-100 dark:bg-slate-700"}`}>
+                        <span className={`material-symbols-outlined ${i === 0 ? "" : "text-blue-600 dark:text-blue-400"}`}>rocket_launch</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${
+                          i === 0
+                            ? "bg-emerald-400 text-slate-900"
+                            : "bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400"
+                        }`}
+                      >
+                        {matchPercent(task.score)}% Match
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-bold font-headline mb-1">{task.title}</h4>
+                    <p className={`text-sm mb-4 line-clamp-2 ${i === 0 ? "text-white/70" : "text-slate-600 dark:text-slate-400"}`}>
+                      {task.description}
+                    </p>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-400 text-slate-900 px-2 py-1 rounded">98% Match</span>
-                </div>
-                <h4 className="text-lg font-bold font-headline mb-1">AI Research Intern</h4>
-                <p className="text-white/70 text-sm mb-4">DeepMind • London (Hybrid)</p>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium">Applied by 12 others</span>
-                <span className="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_forward</span>
-              </div>
-            </div>
-
-            {/* Match 2 - Standard */}
-            <div 
-              onClick={handleMatchClick}
-              className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg ghost-border flex flex-col justify-between group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg">
-                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">architecture</span>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs font-medium ${i === 0 ? "" : "text-slate-500 dark:text-slate-400"}`}>
+                      ${task.budget.toLocaleString()} budget
+                    </span>
+                    <span className={`material-symbols-outlined group-hover:translate-x-2 transition-transform ${i === 0 ? "" : "text-blue-600 dark:text-blue-400"}`}>arrow_forward</span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">92% Match</span>
                 </div>
-                <h4 className="text-lg font-bold font-headline text-slate-900 dark:text-white mb-1">Product Designer</h4>
-                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">Linear • Remote</p>
+              ))
+            ) : fallbackTasks.length > 0 ? (
+              fallbackTasks.map((task, i) => (
+                <div
+                  key={task.id}
+                  onClick={() => navigate("/match")}
+                  className={`${
+                    i === 0
+                      ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
+                      : "bg-white dark:bg-slate-800 ghost-border text-slate-900 dark:text-white"
+                  } p-6 rounded-2xl shadow-lg flex flex-col justify-between group cursor-pointer transition-all hover:shadow-2xl transform hover:-translate-y-1`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`p-2 rounded-lg ${i === 0 ? "bg-white/10 backdrop-blur-md" : "bg-slate-100 dark:bg-slate-700"}`}>
+                        <span className={`material-symbols-outlined ${i === 0 ? "" : "text-blue-600 dark:text-blue-400"}`}>work</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${
+                          i === 0
+                            ? "bg-emerald-400 text-slate-900"
+                            : "bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400"
+                        }`}
+                      >
+                        Open
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-bold font-headline mb-1">{task.title}</h4>
+                    <p className={`text-sm mb-4 line-clamp-2 ${i === 0 ? "text-white/70" : "text-slate-600 dark:text-slate-400"}`}>
+                      {task.description}
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs font-medium ${i === 0 ? "" : "text-slate-500 dark:text-slate-400"}`}>
+                      ${task.budget.toLocaleString()} budget
+                    </span>
+                    <span className={`material-symbols-outlined group-hover:translate-x-2 transition-transform ${i === 0 ? "" : "text-blue-600 dark:text-blue-400"}`}>arrow_forward</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-1 md:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg ghost-border flex flex-col items-center justify-center text-center">
+                <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-3">work</span>
+                <h4 className="text-lg font-bold font-headline text-slate-900 dark:text-white mb-2">No opportunities yet</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
+                  Recruiters haven't posted any tasks yet. Check back soon!
+                </p>
+                {user?.role === "recruiter" && (
+                  <button
+                    onClick={() => navigate("/recruiter")}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Post a Task
+                  </button>
+                )}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Closing in 2 days</span>
-                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 group-hover:translate-x-2 transition-transform">arrow_forward</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Active Applications Table */}
+          {/* Latest Opportunities Table */}
           <div className="col-span-12 lg:col-span-9 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg ghost-border">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-bold font-headline text-slate-900 dark:text-white">Active Applications</h3>
+              <h3 className="text-xl font-bold font-headline text-slate-900 dark:text-white">Latest Opportunities</h3>
               <button 
                 onClick={handleViewAll}
                 className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline underline-offset-4 transition-colors"
@@ -165,84 +371,113 @@ export const Home = () => {
                 View All
               </button>
             </div>
-            <div className="space-y-4">
-              {/* Application Item 1 */}
-              <div 
-                onClick={handleApplicationClick}
-                className="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-lg flex items-center justify-between transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-600 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">STR</div>
-                  <div>
-                    <h5 className="font-bold text-sm text-slate-900 dark:text-white">Frontend Engineer</h5>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Stripe • Applied 4 days ago</p>
+            {openTasks.length > 0 ? (
+              <div className="space-y-4">
+                {openTasks.map((task) => (
+                  <div 
+                    key={task.id}
+                    onClick={() => navigate("/match")}
+                    className="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-lg flex items-center justify-between transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-600 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">
+                        {task.title.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm text-slate-900 dark:text-white">{task.title}</h5>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {task.skills?.length || 0} skills required
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-12">
+                      <div className="hidden md:block">
+                        <p className="text-[10px] uppercase tracking-tighter text-slate-500 dark:text-slate-400 mb-1">Budget</p>
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">${task.budget.toLocaleString()}</p>
+                      </div>
+                      <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase ${
+                        task.status === "open"
+                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                          : "bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300"
+                      }`}>
+                        {task.status || "open"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-12">
-                  <div className="hidden md:block">
-                    <p className="text-[10px] uppercase tracking-tighter text-slate-500 dark:text-slate-400 mb-1">Next Step</p>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Technical Interview</p>
-                  </div>
-                  <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full uppercase">In Progress</span>
-                </div>
+                ))}
               </div>
-
-              {/* Application Item 2 */}
-              <div 
-                onClick={handleApplicationClick}
-                className="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-lg flex items-center justify-between transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-600 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">MSF</div>
-                  <div>
-                    <h5 className="font-bold text-sm text-slate-900 dark:text-white">Data Science Intern</h5>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Microsoft • Applied 1 week ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-12">
-                  <div className="hidden md:block">
-                    <p className="text-[10px] uppercase tracking-tighter text-slate-500 dark:text-slate-400 mb-1">Next Step</p>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Action Required</p>
-                  </div>
-                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold rounded-full uppercase">Action Needed</span>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">
+                No opportunities posted yet.
+              </p>
+            )}
           </div>
 
-          {/* Right Column: Feedback & Badges */}
+          {/* Right Column: Resume Status & Quick Actions */}
           <div className="col-span-12 lg:col-span-3 space-y-6">
-            {/* Feedback Section */}
+            {/* Resume Status Section */}
             <div className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg ghost-border">
               <h4 className="text-sm font-bold font-headline text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined">comment</span>
-                Recent Feedback
+                <span className="material-symbols-outlined">description</span>
+                Resume Status
               </h4>
               <div className="bg-white dark:bg-slate-700 p-4 rounded-lg backdrop-blur-sm ghost-border">
-                <p className="text-xs italic text-slate-600 dark:text-slate-400 mb-3">"Impressive portfolio projects, specifically the AI model visualization. We'd love to see more..."</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-500"></div>
-                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Sarah J. • Recruiter</span>
-                </div>
+                {resumeUploaded ? (
+                  <>
+                    <p className="text-xs italic text-slate-600 dark:text-slate-400 mb-3">
+                      Your resume has been analyzed. {matches.length > 0 ? `${matches.length} matched opportunities are ready for you.` : "Upload it again to refresh your matches."}
+                    </p>
+                    <button
+                      onClick={handleMatchClick}
+                      className="w-full text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider hover:underline underline-offset-4"
+                    >
+                      View My Matches
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs italic text-slate-600 dark:text-slate-400 mb-3">
+                      No resume uploaded yet. Upload your resume to unlock AI-powered matching.
+                    </p>
+                    <button
+                      onClick={handleResumeUpload}
+                      className="w-full text-center text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider hover:underline underline-offset-4"
+                    >
+                      Upload Resume
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Badges Section */}
+            {/* Quick Actions Section */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg ghost-border">
               <h4 className="text-sm font-bold font-headline text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined">workspace_premium</span>
-                Earned Badges
+                <span className="material-symbols-outlined">bolt</span>
+                Quick Actions
               </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="aspect-square rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Top 1% React">
-                  <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400" style={{ fontVariationSettings: "'FILL' 1" }}>code</span>
-                </div>
-                <div className="aspect-square rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Fast Responder">
-                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-                </div>
-                <div className="aspect-square rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Verified Skills">
-                  <span className="material-symbols-outlined text-amber-600 dark:text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                </div>
+              <div className="space-y-3">
+                <button
+                  onClick={handleResumeUpload}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">upload</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Upload Resume</span>
+                </button>
+                <button
+                  onClick={handleMatchClick}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400">recommend</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Matches</span>
+                </button>
+                <button
+                  onClick={handleViewAll}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">work</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Browse Tasks</span>
+                </button>
               </div>
             </div>
           </div>

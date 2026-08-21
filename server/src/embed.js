@@ -62,7 +62,9 @@ export async function embed(text) {
     const run = async () => {
       const embedder = await getEmbedder();
       const result = await embedder(text, { pooling: 'mean', normalize: true });
-      return result.data;
+      // Convert to a plain array: Float32Array is silently base64-encoded by
+      // Prisma when stored in a JSONB column, which corrupts the embedding.
+      return Array.from(result.data);
     };
 
     return await Promise.race([

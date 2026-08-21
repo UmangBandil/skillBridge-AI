@@ -6,8 +6,10 @@ export interface Task {
   skills: string[];
   budget: number;
   createdAt: string;
-  status: string;
+  status?: string; // Defaults to "open" on the server
   score?: number; // Optional: matching score for matched tasks
+  estimatedHours?: number; // Optional: shown by some views, not persisted
+  matchedSkills?: string[]; // Optional: skills matched against a resume
 }
 
 // Define a type for the data needed to create a task
@@ -20,6 +22,19 @@ export interface CreateTaskData {
 
 export interface UpdateTaskData {
   status: string;
+}
+
+export interface PortfolioPayload {
+  skills?: string[];
+  education?: string[];
+  experience?: string[];
+  contact?: {
+    email?: string | null;
+    phone?: string | null;
+    linkedin?: string | null;
+    github?: string | null;
+  };
+  [key: string]: unknown;
 }
 
 const BASE = "http://localhost:4000/api"; // This will be proxied by Render
@@ -112,6 +127,31 @@ export async function deleteTask(id: string): Promise<void> {
   });
   if (!res.ok) {
     throw new Error('Failed to delete task');
+  }
+}
+
+export async function getPortfolio(): Promise<{
+  portfolio: PortfolioPayload | null;
+  name?: string;
+}> {
+  const res = await fetch(`/api/portfolio`, {
+    headers: getAuthHeaders() as HeadersInit,
+  });
+  if (!res.ok) {
+    throw new Error('Failed to fetch portfolio');
+  }
+  return res.json();
+}
+
+export async function savePortfolio(portfolio: PortfolioPayload): Promise<void> {
+  const res = await fetch(`/api/portfolio`, {
+    method: 'PUT',
+    headers: getAuthHeaders() as HeadersInit,
+    body: JSON.stringify({ portfolio }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to save portfolio');
   }
 }
 

@@ -44,7 +44,12 @@ export async function rankTasks(parsedResume, tasks) {
         
         return {
           ...t,
-          score: t.embedding ? cosine(Array.from(resumeVec), Array.from(t.embedding)) : 0,
+          // Only compute cosine for real array embeddings. Old rows (or a
+          // Float32Array stored via Prisma) may be strings/base64 — treat
+          // those as unscored rather than producing NaN.
+          score: Array.isArray(t.embedding) && t.embedding.length > 0
+            ? cosine(Array.from(resumeVec), t.embedding)
+            : 0,
           matchedSkills: taskSkills.filter(skill => 
             skills.some(resumeSkill => 
               resumeSkill.toLowerCase().includes(skill.toLowerCase()) || 
