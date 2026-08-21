@@ -37,8 +37,6 @@ export interface PortfolioPayload {
   [key: string]: unknown;
 }
 
-const BASE = "http://localhost:4000/api"; // This will be proxied by Render
-
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
     // The Content-Type header is crucial for the body to be parsed correctly

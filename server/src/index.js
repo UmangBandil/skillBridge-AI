@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import taskRoutes from "./routes/task.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
@@ -10,10 +12,16 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Use env-driven CORS origin and allow credentials (needed for cookie-based auth)
 const CLIENT_URL = process.env.CLIENT_URL ?? "http://localhost:5173";
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+const isProduction = process.env.NODE_ENV === "production";
+app.use(cors({
+  origin: isProduction ? true : CLIENT_URL,
+  credentials: true
+}));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -44,6 +52,21 @@ app.use("/portfolio", portfolioRoutes);
 
 // Add a health check endpoint
 app.get("/health", (req, res) => res.send("OK"));
+
+// Serve frontend static files in production
+const frontendDist = join(__dirname, "..", "..", "web", "dist");
+app.use(express.static(frontendDist));
+
+// SPA catch-all: serve index.html for non-API routes so React Router works
+app.get("*", (req, res, next) => {
+  // Only catch non-API routes
+  if (req.path.startsWith("/tasks") || req.path.startsWith("/auth") || req.path.startsWith("/portfolio") || req.path.startsWith("/health")) {
+    return next();
+  }
+  res.sendFile(join(frontendDist, "index.html"), (err) => {
+    if (err) next();
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

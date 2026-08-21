@@ -1,12 +1,30 @@
 services:
   - type: web
-    name: skillbridge-ai
-    env: node
+    name: skillbridge-api
+    runtime: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillbridge-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: skillbridge-db
     plan: free
-    branch: main
-    healthCheckPath: /api/health
-    buildCommand: |
-      npm install
-      npm run build
-      npx prisma generate --schema=./server/prisma/schema.prisma
-    startCommand: npm start
+    databaseName: skillbridge
+    user: skillbridge_user
