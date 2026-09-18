@@ -25,6 +25,11 @@ export interface UpdateTaskData {
 }
 
 export interface PortfolioPayload {
+  name?: string;
+  address?: string;
+  hobbies?: string;
+  resumeText?: string;
+  lastResumeUpdatedAt?: string;
   skills?: string[];
   education?: string[];
   experience?: string[];

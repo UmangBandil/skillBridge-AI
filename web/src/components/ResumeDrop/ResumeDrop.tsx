@@ -16,7 +16,7 @@ interface ParsedResume {
 }
 
 interface ResumeDropProps {
-  onUpload: (content: string) => void;
+  onUpload: (content: string, parsed?: ParsedResume) => void;
   onParsed?: (parsed: ParsedResume) => void;
 }
 
@@ -114,7 +114,7 @@ export const ResumeDrop = ({ onUpload, onParsed }: ResumeDropProps) => {
         setParsed(data.data);
         onParsed?.(data.data);
         // Trigger the main match callback with extracted text
-        onUpload(data.extractedText);
+        onUpload(data.extractedText, data.data);
       }
     } catch (err: any) {
       console.error('Error uploading resume:', err);
