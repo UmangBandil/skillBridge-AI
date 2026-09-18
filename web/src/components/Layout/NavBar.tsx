@@ -54,6 +54,42 @@ export const NavBar = () => {
               }`}>{item.label}</span>
             </NavLink>
           ))}
+          {!user && (
+            <>
+              <NavLink
+                to="/signin"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
+                    isActive
+                      ? "bg-blue-600 dark:bg-blue-700 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`
+                }
+                title="Sign In"
+              >
+                <span className="material-symbols-outlined flex-shrink-0">login</span>
+                <span className={`text-sm font-medium transition-all duration-300 ${
+                  sidebarExpanded ? "opacity-100" : "opacity-0 w-0"
+                }`}>Sign In</span>
+              </NavLink>
+              <NavLink
+                to="/signup"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
+                    isActive
+                      ? "bg-blue-600 dark:bg-blue-700 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`
+                }
+                title="Sign Up"
+              >
+                <span className="material-symbols-outlined flex-shrink-0">person_add</span>
+                <span className={`text-sm font-medium transition-all duration-300 ${
+                  sidebarExpanded ? "opacity-100" : "opacity-0 w-0"
+                }`}>Sign Up</span>
+              </NavLink>
+            </>
+          )}
         </nav>
 
         {/* User Profile Card */}
@@ -161,6 +197,26 @@ export const NavBar = () => {
                 <span className="text-sm font-medium">{item.label}</span>
               </NavLink>
             ))}
+            {!user && (
+              <>
+                <NavLink
+                  to="/signin"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span className="material-symbols-outlined">login</span>
+                  <span className="text-sm font-medium">Sign In</span>
+                </NavLink>
+                <NavLink
+                  to="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span className="material-symbols-outlined">person_add</span>
+                  <span className="text-sm font-medium">Sign Up</span>
+                </NavLink>
+              </>
+            )}
             {user && (
               <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
                 <button
