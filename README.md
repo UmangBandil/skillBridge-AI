@@ -1,147 +1,111 @@
 # SkillBridge AI
-**AI-Driven Micro-Internship Matching & Mentorship Platform**
 
-🔗 Live Demo (staging): https://skillbridgeai.dev  
-📦 Backend API: https://api.skillbridgeai.dev/docs  
-🧪 Test Coverage: ![coverage](https://img.shields.io/codecov/c/github/UmangBandil/skillBridge-AI)
+SkillBridge AI is a full-stack platform for discovering and matching students with short, skills-based internship tasks. Students upload a resume and receive ranked opportunities; recruiters create and manage tasks; users can maintain a structured portfolio.
 
----
+## Current MVP
 
-## 1. What it does
-- Upload your résumé → SkillBridge AI extracts skills and **semantically matches** you to 10-40 h paid micro-internships posted by NGOs / early-stage start-ups.
-- Deliver the task → receive **AI-generated mentor feedback** (GPT-3.5) and a **verified portfolio badge**.
-- Escrow payments via **Stripe Connect** – funds released only after both sides sign-off.
+- JWT authentication with student and recruiter roles
+- Recruiter task creation and task ownership checks
+- Task browsing with status updates
+- PDF/TXT resume upload and text extraction
+- Heuristic skill extraction, optional OpenAI parsing, and local SBERT embeddings
+- Resume-to-task matching with matched-skill explanations
+- Authenticated portfolio storage
 
----
+Payments, applications, mentor feedback, badges, and AWS Cognito are not part of the current implementation. They should not be treated as supported product features yet.
 
-## 2. Tech Stack
-| Layer | Tech |
-|-------|------|
-| Frontend | React 18 + TypeScript + Tailwind + Vite + Vercel Speed Insights |
-| Backend | Node.js 18 + Express + Prisma + PostgreSQL |
-| AI | SBERT `all-MiniLM-L6-v2` → ONNX runtime + GPT-3.5-turbo |
-| Cloud | AWS Amplify (front), ECS Fargate (API), RDS (pg), S3, CloudFront |
-| Auth | AWS Cognito JWT |
-| Payments | Stripe Connect Express accounts |
-| CI/CD | GitHub Actions → Docker → ECR → ECS |
+## Stack
 
----
+| Layer | Technology |
+| --- | --- |
+| Web | React 18, TypeScript, React Router, Tailwind CSS, Vite |
+| API | Node.js, Express, Prisma |
+| Database | PostgreSQL |
+| Matching | `@xenova/transformers`, `all-MiniLM-L6-v2`, cosine similarity |
+| Optional parsing | OpenAI API |
+| Deployment | Docker and Render |
 
-## 3. Quick Start (local)
+## Local development
+
+### Prerequisites
+
+- Node.js 20+
+- Docker Desktop
+- A PostgreSQL database, local or hosted
+
+### Setup
+
 ```bash
-# 1. Clone
-git clone https://github.com/UmangBandil/skillBridge-AI.git && cd skillBridge-AI
-
-# 2. Infra
-# Ensure you have Docker and docker-compose installed.
-docker-compose up -d   # Postgres + Redis
-
-# 3. Install dependencies
-# From the root of the project
 npm install
-
-# 4. Set up environment variables
-# API
-cd server
-cp .env.example .env   # add DB_URL, STRIPE_KEY, OPENAI_KEY
-# Web
-cd ../web
-cp .env.example .env
-
-# 5. (Optional) Seed demo micro-internships
-# From the server directory. Creates a demo recruiter account and 6 realistic
-# tasks with real SBERT embeddings. Idempotent — safe to re-run.
-cd server && npm run db:seed
-
-# 6. Run the development servers
-# From the root of the project
+docker compose up -d
+copy server\.env.example server\.env
+npm run --workspace server db:generate
+npm run --workspace server db:migrate
 npm run dev
 ```
-Visit http://localhost:5173
 
----
+The web app runs at `http://localhost:5173` and the API runs at `http://localhost:4000`.
 
-## 4. AI Pipeline
+Set `DATABASE_URL`, `JWT_SECRET`, and `CLIENT_URL` in `server/.env`. `OPENAI_API_KEY` is optional; without it, resume parsing uses the local fallback parser.
+
+## API overview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/auth/signup` | Create a student or recruiter account |
+| POST | `/auth/signin` | Sign in and receive a JWT |
+| GET | `/tasks` | List tasks |
+| POST | `/tasks` | Create a recruiter task |
+| PUT | `/tasks/:id` | Update the owner's task status |
+| DELETE | `/tasks/:id` | Delete the owner's task |
+| POST | `/tasks/upload` | Parse a PDF or TXT resume |
+| POST | `/tasks/match` | Rank open tasks against resume text |
+| GET/PUT | `/portfolio` | Read or save the signed-in user's portfolio |
+| GET | `/health` | Liveness check |
+| GET | `/ready` | Database readiness check |
+
+The Vite development proxy exposes these routes through `/api`.
+
+## Matching flow
+
+```text
+PDF/TXT resume
+      |
+      v
+text extraction -> skill parsing -> SBERT embedding
+                                      |
+task title/description/skills --------+
+                                      v
+                         cosine similarity ranking
 ```
-Résumé PDF → spaCy NER → skills JSON
-                ↓
-ONNX SBERT → cosine similarity → ranked tasks
-                ↓
-Task delivery → GPT-3.5 prompt → structured feedback JSON
+
+Matching is a recommendation aid, not a hiring decision. Results can fall back to the newest open tasks when a resume has no recognized skills or the embedding model is unavailable.
+
+## Project structure
+
+```text
+server/
+  prisma/              schema and migrations
+  src/routes/          auth, task, and portfolio endpoints
+  src/ml/              resume parsing and matching
+  src/middleware/      JWT and authorization middleware
+web/
+  src/pages/           route-level screens
+  src/components/      reusable UI
+  src/services/        API client
 ```
-- The skill extraction model uses a comprehensive vocabulary to categorize skills into various domains like Technology, Materials, and Occupations.
-- Model size: 300 MB INT8 quantized → **< 150 ms** on 2 vCPU.  
-- Evaluation: MAP@10 ≥ 0.80 on held-out 500 résumé-task pairs.
 
----
+## Quality and deployment
 
-## 5. API (snapshot)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/v1/match | Returns top-10 matched tasks |
-| POST | /api/v1/tasks | Create task (org only) |
-| POST | /api/v1/applications | Apply & escrow payment |
-| GET | /api/v1/portfolio/:user | Public portfolio JSON |
+The production image generates Prisma client code, builds the web app, applies migrations, and starts the API. Before deploying, configure the environment variables in `render.yaml` and verify both `/health` and `/ready`.
 
-Full OpenAPI spec: `http://localhost:4000/docs`
+Run the current automated checks locally:
 
----
-
-## 6. Environment Variables
 ```bash
-# server/.env
-DATABASE_URL="postgres://user:pass@localhost:5432/skillbridge"
-STRIPE_SECRET_KEY=sk_test_***
-OPENAI_API_KEY=sk-***
-AWS_REGION=us-east-1
-COGNITO_USER_POOL_ID=***
-JWT_SECRET=***
+npm run build
+npm run test
 ```
 
----
+CI runs the frontend build plus backend parser tests and frontend service tests on every push to `main` and every pull request.
 
-## 7. Testing
-```bash
-# unit
-npm run test:unit
-
-# e2e (needs running stack)
-npm run test:e2e
-
-# coverage
-npm run test:coverage
-```
-Target: ≥ 80 % lines.
-
----
-
-## 8. Deployment (AWS)
-```bash
-# push tag triggers GitHub Actions
-git tag v1.0.0 && git push origin v1.0.0
-```
-Blue-green ECS deployment in ~5 min.
-
----
-
-## 9. Roadmap
-- [ ] Mobile app (React Native)  
-- [ ] Multi-language résumé parsing  
-- [ ] University analytics dashboard  
-- [ ] Badge system (Open-Badges v3)
-
----
-
-## 10. Contributing
-PRs welcome! Please branch from `develop` and run `npm run lint` before push.
-
----
-
-## 11. License
-MIT © 2025 UmangBandil
-
----
-
-## 12. Acknowledgements
-Dataset donors: College Career Centre & open-source community.  
-Icons: Heroicons, AWS Architecture Icons.
+The next engineering priorities are API integration tests, an end-to-end user flow, accessible error/loading states, task search/filtering, and a focused application workflow.

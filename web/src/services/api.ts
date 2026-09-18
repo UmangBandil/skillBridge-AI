@@ -37,6 +37,15 @@ export interface PortfolioPayload {
   [key: string]: unknown;
 }
 
+export function normalizeTaskSkills(skills: string[] | string | null | undefined): string[] {
+  if (Array.isArray(skills)) {
+    return skills.map((skill) => skill.trim()).filter(Boolean);
+  }
+  return typeof skills === 'string'
+    ? skills.split(',').map((skill) => skill.trim()).filter(Boolean)
+    : [];
+}
+
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
     // The Content-Type header is crucial for the body to be parsed correctly
@@ -167,8 +176,6 @@ export async function matchTasks(resume: string): Promise<Task[]> {
   // Format skills as arrays
   return data.map((task: any) => ({
     ...task,
-    skills: Array.isArray(task.skills) 
-      ? task.skills 
-      : (task.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+    skills: normalizeTaskSkills(task.skills),
   }));
 }
