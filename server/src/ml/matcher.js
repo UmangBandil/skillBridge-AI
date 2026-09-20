@@ -1,5 +1,5 @@
-import pkg from 'ml-distance';
-const cosine = pkg.similarity.cosine;
+import { similarity } from 'ml-distance';
+const cosine = similarity.cosine;
 import { embed } from '../embed.js';
 
 /**

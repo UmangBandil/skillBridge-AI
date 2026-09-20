@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import taskRoutes from "./routes/task.routes.js";
@@ -12,12 +13,16 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const prisma = new PrismaClient();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Use env-driven CORS origin and allow credentials (needed for cookie-based auth)
 const CLIENT_URL = process.env.CLIENT_URL ?? "http://localhost:5173";
 const isProduction = process.env.NODE_ENV === "production";
+if (isProduction && !process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be configured in production");
+}
 app.use(cors({
   origin: isProduction ? true : CLIENT_URL,
   credentials: true
@@ -52,6 +57,15 @@ app.use("/portfolio", portfolioRoutes);
 
 // Add a health check endpoint
 app.get("/health", (req, res) => res.send("OK"));
+app.get("/ready", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ready" });
+  } catch (error) {
+    console.error("Readiness check failed:", error);
+    res.status(503).json({ status: "unavailable" });
+  }
+});
 
 // Serve frontend static files in production
 const frontendDist = join(__dirname, "..", "..", "web", "dist");

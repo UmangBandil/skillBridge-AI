@@ -5,9 +5,10 @@ interface TaskDetailsModalProps {
   onClose: () => void;
   onAccept: () => void;
   onDeny: () => void;
+  canManage?: boolean;
 }
 
-export const TaskDetailsModal = ({ task, onClose, onAccept, onDeny }: TaskDetailsModalProps) => {
+export const TaskDetailsModal = ({ task, onClose, onAccept, onDeny, canManage = true }: TaskDetailsModalProps) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full">
@@ -66,18 +67,22 @@ export const TaskDetailsModal = ({ task, onClose, onAccept, onDeny }: TaskDetail
           >
             Close
           </button>
-          <button 
-            onClick={onDeny} 
-            className="px-6 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-          >
-            Decline
-          </button>
-          <button 
-            onClick={onAccept} 
-            className="px-6 py-2 rounded-lg bg-emerald-600 dark:bg-emerald-700 text-white font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
-          >
-            Accept
-          </button>
+          {canManage && (
+            <>
+              <button
+                onClick={onDeny}
+                className="px-6 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+              >
+                Decline
+              </button>
+              <button
+                onClick={onAccept}
+                className="px-6 py-2 rounded-lg bg-emerald-600 dark:bg-emerald-700 text-white font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
+              >
+                Accept
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export function useTasks() {
   };
 
   const start = async (id: string) => {
-    const updated = await updateTask(id, { status: "in progress" });
+    const updated = await updateTask(id, { status: "in_progress" });
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
   };
 

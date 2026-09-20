@@ -1,7 +1,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { embed, rankTasks } from "../ml/matcher.js";
-import { protect } from "../middleware/auth.middleware.js";
+import { protect, requireRole } from "../middleware/auth.middleware.js";
 import { parseResume } from "../ml/parser.js";
 import { extractTextFromPDF, validatePDF, getFileSizeMB } from "../utils/pdfExtractor.js";
 
@@ -170,7 +170,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, requireRole("recruiter"), async (req, res) => {
   try {
     console.log('Task creation request received:', {
       body: req.body,
@@ -258,7 +258,7 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-router.put("/:id", protect, async (req, res) => {
+router.put("/:id", protect, requireRole("recruiter"), async (req, res) => {
   try {
     const taskId = req.params.id;
     if (!taskId || typeof taskId !== "string") {
@@ -266,8 +266,20 @@ router.put("/:id", protect, async (req, res) => {
     }
 
     const { status } = req.body;
-    if (typeof status !== "string" || !status.trim()) {
+    const allowedStatuses = ["open", "in_progress", "completed", "cancelled"];
+    if (typeof status !== "string" || !allowedStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { authorId: true },
+    });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    if (task.authorId !== req.user.userId) {
+      return res.status(403).json({ error: "You can only update your own tasks" });
     }
 
     const updatedTask = await prisma.task.update({
@@ -285,11 +297,22 @@ router.put("/:id", protect, async (req, res) => {
   }
 });
 
-router.delete("/:id", protect, async (req, res) => {
+router.delete("/:id", protect, requireRole("recruiter"), async (req, res) => {
   try {
     const taskId = req.params.id;
     if (!taskId || typeof taskId !== "string") {
       return res.status(400).json({ error: "Invalid task id" });
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { authorId: true },
+    });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    if (task.authorId !== req.user.userId) {
+      return res.status(403).json({ error: "You can only delete your own tasks" });
     }
 
     await prisma.task.delete({ where: { id: taskId } });

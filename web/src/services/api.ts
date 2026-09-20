@@ -25,6 +25,11 @@ export interface UpdateTaskData {
 }
 
 export interface PortfolioPayload {
+  name?: string;
+  address?: string;
+  hobbies?: string;
+  resumeText?: string;
+  lastResumeUpdatedAt?: string;
   skills?: string[];
   education?: string[];
   experience?: string[];
@@ -35,6 +40,15 @@ export interface PortfolioPayload {
     github?: string | null;
   };
   [key: string]: unknown;
+}
+
+export function normalizeTaskSkills(skills: string[] | string | null | undefined): string[] {
+  if (Array.isArray(skills)) {
+    return skills.map((skill) => skill.trim()).filter(Boolean);
+  }
+  return typeof skills === 'string'
+    ? skills.split(',').map((skill) => skill.trim()).filter(Boolean)
+    : [];
 }
 
 const getAuthHeaders = () => {
@@ -167,8 +181,6 @@ export async function matchTasks(resume: string): Promise<Task[]> {
   // Format skills as arrays
   return data.map((task: any) => ({
     ...task,
-    skills: Array.isArray(task.skills) 
-      ? task.skills 
-      : (task.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+    skills: normalizeTaskSkills(task.skills),
   }));
 }
