@@ -31,55 +31,17 @@ export const Portfolio = () => {
 
   // Load user data on mount
   useEffect(() => {
-    const loadPortfolio = async () => {
+    try {
       const user = localStorage.getItem("user");
       if (user) {
-        try {
-          const userData = JSON.parse(user);
-          if (userData.displayName || userData.name) {
-            setName(userData.displayName || userData.name);
-          }
-        } catch (error) {
-          console.error("Error loading user data:", error);
+        const userData = JSON.parse(user);
+        if (userData.displayName) {
+          setName(userData.displayName);
         }
       }
-
-      try {
-        const result = await getPortfolio();
-        const saved = result.portfolio;
-        if (!saved || typeof saved !== "object") return;
-
-        if (typeof saved.name === "string") setName(saved.name);
-        if (typeof saved.address === "string") setAddress(saved.address);
-        if (typeof saved.hobbies === "string") setHobbies(saved.hobbies);
-        if (typeof saved.resumeText === "string") {
-          setResumeText(saved.resumeText);
-          setExtractedAddress(extractAddressFromResume(saved.resumeText));
-        }
-
-        if (Array.isArray(saved.skills) || Array.isArray(saved.education) || Array.isArray(saved.experience)) {
-          const restored: ParsedResume = {
-            skills: Array.isArray(saved.skills) ? saved.skills : [],
-            skillCount: Array.isArray(saved.skills) ? saved.skills.length : 0,
-            education: Array.isArray(saved.education) ? saved.education : [],
-            hasEducation: Array.isArray(saved.education) && saved.education.length > 0,
-            experience: Array.isArray(saved.experience) ? saved.experience : [],
-            hasExperience: Array.isArray(saved.experience) && saved.experience.length > 0,
-            contact: {
-              email: saved.contact?.email || null,
-              phone: saved.contact?.phone || null,
-              linkedin: saved.contact?.linkedin || null,
-              github: saved.contact?.github || null,
-            },
-          };
-          setParsedResumeData(restored);
-        }
-      } catch (error) {
-        console.error("Error loading portfolio:", error);
-      }
-    };
-
-    loadPortfolio();
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
   }, []);
 
   // Extract address from resume text
@@ -104,42 +66,51 @@ export const Portfolio = () => {
     return null;
   };
 
-  const handleResumeParsed = async (parsed: ParsedResume) => {
+  const handleResumeParsed = async (parsed: ParsedResume, text?: string) => {
     setParsedResumeData(parsed);
-  };
 
-  const handleMatch = async (resume: string, parsed?: ParsedResume) => {
-    setResumeText(resume);
-    if (parsed) {
-      setParsedResumeData(parsed);
-      const foundAddress = extractAddressFromResume(resume);
-      if (foundAddress) setExtractedAddress(foundAddress);
-    }
-
+    // Persist the parsed resume (skills, education, experience, contact) to
+    // the user's portfolio so the Home page skill profile is populated even
+    // before the AI match finishes.
     try {
-      const current = await getPortfolio();
-      const existing: PortfolioPayload =
-        current?.portfolio && typeof current.portfolio === "object"
-          ? current.portfolio
-          : {};
+      let existing: PortfolioPayload = {};
+      try {
+        const current = await getPortfolio();
+        if (current?.portfolio && typeof current.portfolio === "object") {
+          existing = current.portfolio as PortfolioPayload;
+        }
+      } catch (err) {
+        console.error("Failed to load existing portfolio:", err);
+      }
+
       await savePortfolio({
         ...existing,
-        ...(parsed && {
-          skills: parsed.skills || [],
-          education: parsed.education || [],
-          experience: parsed.experience || [],
-          contact: parsed.contact || {},
-        }),
-        resumeText: resume,
+        skills: parsed.skills || [],
+        education: parsed.education || [],
+        experience: parsed.experience || [],
+        contact: parsed.contact || {},
         lastResumeUpdatedAt: new Date().toISOString(),
       });
-      setSuccessMessage("Resume parsed successfully! Your profile has been updated.");
-      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Failed to save resume to portfolio:", err);
-      setSuccessMessage("");
     }
 
+    // Extract address from the resume text passed directly by the child
+    // component (not from state, which hasn't updated yet).
+    const resumeSource = text || resumeText;
+    if (resumeSource) {
+      const foundAddress = extractAddressFromResume(resumeSource);
+      if (foundAddress) {
+        setExtractedAddress(foundAddress);
+      }
+    }
+    
+    setSuccessMessage("Resume parsed successfully! Your profile has been updated.");
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  const handleMatch = async (resume: string) => {
+    setResumeText(resume);
     // Run the AI match and persist the results so the Match page can show
     // them when the user follows the "Browse Opportunities" CTA.
     try {

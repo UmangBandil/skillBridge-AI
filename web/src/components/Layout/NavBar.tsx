@@ -11,6 +11,7 @@ export const NavBar = () => {
   const navItems = [
     { path: "/", label: "Home", icon: "home" },
     { path: "/match", label: "Opportunities", icon: "work_outline", roles: ["student"] },
+    { path: "/applications", label: "Applications", icon: "assignment_turned_in", roles: ["student"] },
     { path: "/portfolio", label: "Portfolio", icon: "badge", roles: ["student"] },
     { path: "/recruiter", label: "Recruiter", icon: "business", roles: ["recruiter"] },
   ];

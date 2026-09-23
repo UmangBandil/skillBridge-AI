@@ -25,6 +25,9 @@ const SignUp = lazy(() =>
 const Recruiter = lazy(() =>
   import("./pages/Recruiter/Recruiter").then((m) => ({ default: m.Recruiter }))
 );
+const ApplicationTracker = lazy(() =>
+  import("./pages/Applications/ApplicationTracker").then((m) => ({ default: m.ApplicationTracker }))
+);
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NotFound } from "./pages/NotFound/NotFound";
 
@@ -48,6 +51,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Match />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="applications"
+            element={
+              <ProtectedRoute>
+                <ApplicationTracker />
               </ProtectedRoute>
             }
           />

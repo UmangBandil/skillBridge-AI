@@ -2,11 +2,9 @@ import { useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import { Task } from "../../services/api";
 import { TaskDetailsModal } from "../../components/TaskDetailsModal/TaskDetailsModal";
-import { useAuth } from "../../hooks/useAuth";
 
 export const TaskList = () => {
-  const { tasks, loading, start, complete, del } = useTasks();
-  const { role } = useAuth();
+  const { tasks, loading, start, complete, del, load } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const handleTaskClick = (task: Task) => {
@@ -65,12 +63,12 @@ export const TaskList = () => {
                       <h3 className="text-lg font-bold font-headline text-slate-900 dark:text-white leading-tight">
                         {task.title}
                       </h3>
-                      {task.status === "open" && (
+                      {task.status === "available" && (
                         <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full uppercase">
                           Available
                         </span>
                       )}
-                      {task.status === "in_progress" && (
+                      {task.status === "in progress" && (
                         <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold rounded-full uppercase">
                           Active
                         </span>
@@ -116,9 +114,8 @@ export const TaskList = () => {
                     </div>
                   </div>
 
-                  {role === "recruiter" && (
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      {task.status === "in_progress" && (
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    {task.status === "in progress" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -128,18 +125,17 @@ export const TaskList = () => {
                       >
                         Complete
                       </button>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          del(task.id);
-                        }}
-                        className="flex-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        del(task.id);
+                      }}
+                      className="flex-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -156,9 +152,7 @@ export const TaskList = () => {
             <TaskDetailsModal
               task={selectedTask}
               onClose={handleCloseModal}
-              onAccept={handleAcceptTask}
-              onDeny={handleDenyTask}
-              canManage={role === "recruiter"}
+              onApplied={load}
             />
           )}
         </div>

@@ -38,3 +38,4 @@ docker/data/
 *.pid
 *.seed
 *.tgz
+.freebuff/

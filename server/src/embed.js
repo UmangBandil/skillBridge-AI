@@ -3,47 +3,30 @@
 // (e.g. Render free tier 512MB RAM limit).
 let pipelineFn = null;
 
-// Lazy-memoized initialization to avoid top-level await and handle startup failures gracefully
-let embedderInstance;
-let embedderInitializing = false;
-let embedderError = null;
+// Promise-based memoization so concurrent embed() calls share a single init.
+let embedderPromise = null;
 
 async function getEmbedder() {
-  if (embedderError) {
-    throw embedderError;
+  if (!embedderPromise) {
+    embedderPromise = (async () => {
+      try {
+        console.log('Initializing embedding model (this may take a moment on first use)...');
+        if (!pipelineFn) {
+          const mod = await import('@xenova/transformers');
+          pipelineFn = mod.pipeline;
+        }
+        const instance = await pipelineFn('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        console.log('Embedding model initialized successfully');
+        return instance;
+      } catch (error) {
+        console.error('Failed to initialize embedding model:', error);
+        // Reset so a retry is possible after the underlying issue is fixed.
+        embedderPromise = null;
+        throw new Error(`Failed to initialize embedding model: ${error.message}`);
+      }
+    })();
   }
-  
-  if (embedderInstance) {
-    return embedderInstance;
-  }
-  
-  if (embedderInitializing) {
-    while (embedderInitializing) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    if (embedderError) {
-      throw embedderError;
-    }
-    return embedderInstance;
-  }
-  
-  embedderInitializing = true;
-  try {
-    console.log('Initializing embedding model (this may take a moment on first use)...');
-    if (!pipelineFn) {
-      const mod = await import('@xenova/transformers');
-      pipelineFn = mod.pipeline;
-    }
-    embedderInstance = await pipelineFn('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-    console.log('Embedding model initialized successfully');
-    embedderInitializing = false;
-    return embedderInstance;
-  } catch (error) {
-    embedderError = error;
-    embedderInitializing = false;
-    console.error('Failed to initialize embedding model:', error);
-    throw new Error(`Failed to initialize embedding model: ${error.message}`);
-  }
+  return embedderPromise;
 }
 
 /**

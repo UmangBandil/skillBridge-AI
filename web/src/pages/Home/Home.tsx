@@ -1,7 +1,7 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listTasks, Task } from "../../services/api";
+import { listTasks, Task, getMyApplications, Application } from "../../services/api";
 
 interface MatchResult extends Task {
   score?: number;
@@ -23,6 +23,7 @@ export const Home = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [recentApplications, setRecentApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Extract first name from display name or email
@@ -34,18 +35,27 @@ export const Home = () => {
 
     const load = async () => {
       try {
-        const [taskData, portfolioRes] = await Promise.all([
-          listTasks(),
+        const [taskData, portfolioRes, myApps] = await Promise.all([
+          listTasks().catch(() => ({ items: [] })),
           fetch("/api/portfolio", {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }).catch(() => null),
+          getMyApplications().catch(() => []),
         ]);
 
         if (cancelled) return;
 
-        if (Array.isArray(taskData)) setTasks(taskData);
+        if (Array.isArray(taskData)) {
+          setTasks(taskData);
+        } else if ((taskData as any)?.items) {
+          setTasks((taskData as any).items);
+        }
+
+        if (Array.isArray(myApps)) {
+          setRecentApplications(myApps.slice(0, 3));
+        }
 
         if (portfolioRes && portfolioRes.ok) {
           const data = await portfolioRes.json();
@@ -449,6 +459,41 @@ export const Home = () => {
                 )}
               </div>
             </div>
+
+            {/* Recent Applications Section */}
+            {recentApplications.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg ghost-border">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-600">assignment</span>
+                    Your Applications
+                  </h4>
+                  <button
+                    onClick={() => navigate('/applications')}
+                    className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="space-y-2.5">
+                  {recentApplications.map((app) => (
+                    <div
+                      key={app.id}
+                      onClick={() => navigate('/applications')}
+                      className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 mb-1">
+                        {app.task?.title}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-500">{new Date(app.appliedAt).toLocaleDateString()}</span>
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400">{app.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions Section */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg ghost-border">

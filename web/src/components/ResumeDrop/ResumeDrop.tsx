@@ -16,8 +16,8 @@ interface ParsedResume {
 }
 
 interface ResumeDropProps {
-  onUpload: (content: string, parsed?: ParsedResume) => void;
-  onParsed?: (parsed: ParsedResume) => void;
+  onUpload: (content: string) => void;
+  onParsed?: (parsed: ParsedResume, resumeText: string) => void;
 }
 
 export const ResumeDrop = ({ onUpload, onParsed }: ResumeDropProps) => {
@@ -27,18 +27,28 @@ export const ResumeDrop = ({ onUpload, onParsed }: ResumeDropProps) => {
   const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
+  const isValidResumeFile = (f: File) => {
+    const name = f.name.toLowerCase();
+    const type = f.type;
+    return (
+      type === 'text/plain' ||
+      type === 'application/pdf' ||
+      type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      name.endsWith('.txt') ||
+      name.endsWith('.pdf') ||
+      name.endsWith('.docx')
+    );
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFile = e.target.files[0];
       if (selectedFile) {
-        const isTxt = selectedFile.type === 'text/plain' || selectedFile.name.toLowerCase().endsWith('.txt');
-        const isPdf = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
-        
-        if (isTxt || isPdf) {
+        if (isValidResumeFile(selectedFile)) {
           setFile(selectedFile);
           setError(null);
         } else {
-          setError({ message: 'Please upload a .pdf or .txt file' });
+          setError({ message: 'Please upload a PDF (.pdf), Word (.docx), or Text (.txt) file' });
         }
       }
     }
@@ -61,14 +71,11 @@ export const ResumeDrop = ({ onUpload, onParsed }: ResumeDropProps) => {
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      const isTxt = droppedFile.type === 'text/plain' || droppedFile.name.toLowerCase().endsWith('.txt');
-      const isPdf = droppedFile.type === 'application/pdf' || droppedFile.name.toLowerCase().endsWith('.pdf');
-      
-      if (isTxt || isPdf) {
+      if (isValidResumeFile(droppedFile)) {
         setFile(droppedFile);
         setError(null);
       } else {
-        setError({ message: 'Please drop a .pdf or .txt file' });
+        setError({ message: 'Please drop a PDF (.pdf), Word (.docx), or Text (.txt) file' });
       }
     }
   };
@@ -109,12 +116,12 @@ export const ResumeDrop = ({ onUpload, onParsed }: ResumeDropProps) => {
         return;
       }
 
-      const data = await response.json();
-      if (data.success && data.data) {
+      const data = await response.json();        if (data.success && data.data) {
         setParsed(data.data);
-        onParsed?.(data.data);
-        // Trigger the main match callback with extracted text
-        onUpload(data.extractedText, data.data);
+        // Pass extracted text directly so the parent can use it without
+        // relying on stale React state.
+        onParsed?.(data.data, data.extractedText);
+        onUpload(data.extractedText);
       }
     } catch (err: any) {
       console.error('Error uploading resume:', err);

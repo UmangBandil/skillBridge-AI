@@ -7,30 +7,176 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ApplicationStatus {
+  APPLIED
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+  WITHDRAWN
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      String   @default("student")
+  id              String         @id @default(cuid())
+  email           String         @unique
+  name            String?
+  password        String
+  role            String         @default("student")
   stripeAccountId String?
-  portfolio Json?
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  portfolio       Json?
+  tasks           Task[]         @relation("UserTasks")
+  applications    Application[]
+  resumes         Resume[]
+  portfolios      Portfolio[]
+  userSkills      UserSkill[]
+  refreshTokens   RefreshToken[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([email])
+  @@index([role])
 }
 
 model Task {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  skills      String
-  budget      Int      // cents
-  status      String   @default("open")
-  embedding   Json?
+  id                    String        @id @default(cuid())
+  title                 String
+  description           String
+  skills                String
+  budget                Int
+  status                String        @default("open")
+  embedding             Json?
   stripePaymentIntentId String?
-  author      User     @relation(fields: [authorId], references: [id])
-  authorId    String
+  author                User          @relation("UserTasks", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId              String
+  taskSkills            TaskSkill[]
+  applications          Application[]
+  matchResults          MatchResult[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  userId      String
+  taskId      String
+  status      ApplicationStatus @default(APPLIED)
+  coverLetter String?           @db.Text
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+  @@index([userId])
+  @@index([taskId])
+  @@index([status])
+  @@index([appliedAt])
+}
+
+model Resume {
+  id          String   @id @default(cuid())
+  userId      String
+  filename    String
+  fileSize    Int
+  mimeType    String
+  rawText     String   @db.Text
+  parsedData  Json
+  skills      String[]
+  embedding   Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String?
+  bio         String?  @db.Text
+  data        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Skill {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  category    String?
+  userSkills  UserSkill[]
+  taskSkills  TaskSkill[]
+  createdAt   DateTime    @default(now())
+
+  @@index([name])
+}
+
+model UserSkill {
+  id          String   @id @default(cuid())
+  userId      String
+  skillId     String
+  yearsExp    Float?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
+model TaskSkill {
+  id          String   @id @default(cuid())
+  taskId      String
+  skillId     String
+  required    Boolean  @default(true)
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([taskId, skillId])
+  @@index([taskId])
+  @@index([skillId])
+}
+
+model MatchResult {
+  id              String   @id @default(cuid())
+  taskId          String
+  userId          String
+  matchScore      Float
+  semanticScore   Float
+  skillScore      Float
+  keywordScore    Float
+  experienceScore Float
+  breakdown       Json
+  matchedSkills   String[]
+  missingSkills   String[]
+  isDegraded      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([matchScore])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }

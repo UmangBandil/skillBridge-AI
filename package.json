@@ -9,9 +9,9 @@
     "dev": "concurrently \"cd server && npm run dev\" \"cd web && npm run dev\"",
     "start": "npm start -w server",
     "build": "npm run build -w web",
-    "test": "npm run test:server && npm run test:web",
-    "test:server": "npm test -w server -- --run",
-    "test:web": "npm test -w web -- --run"
+    "test": "npm test -w server && npm test -w web",
+    "test:server": "npm test -w server",
+    "test:web": "npm test -w web"
   },
   "workspaces": [
     "server",

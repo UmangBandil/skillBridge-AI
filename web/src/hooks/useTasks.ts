@@ -7,8 +7,8 @@ export function useTasks() {
 
   const load = async () => {
     setLoading(true);
-    const data = await listTasks();
-    setTasks(data);
+    const res = await listTasks();
+    setTasks(Array.isArray(res) ? res : res.items);
     setLoading(false);
   };
 

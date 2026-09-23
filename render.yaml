@@ -3,9 +3,13 @@ services:
     name: skillbridge-api
     runtime: docker
     dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         fromDatabase:
           name: skillbridge-db
@@ -14,8 +18,14 @@ services:
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      - key: CORS_ORIGIN
+        value: '*'
       - key: CLIENT_URL
-        value: https://skillbridge-ai-0ddn.onrender.com
+        value: https://skillbridge-api.onrender.com
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 300
       - key: OPENAI_API_KEY
         sync: false
       - key: STRIPE_SECRET_KEY
@@ -26,5 +36,6 @@ services:
 databases:
   - name: skillbridge-db
     plan: free
+    region: oregon
     databaseName: skillbridge
     user: skillbridge_user
