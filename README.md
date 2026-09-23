@@ -44,7 +44,7 @@ graph TD
 | **Database** | PostgreSQL 15 (Relational models with compound unique keys and indexes) |
 | **AI / NLP** | `@xenova/transformers` (`all-MiniLM-L6-v2`), `ml-distance` (Cosine Similarity) |
 | **Document Processing** | `pdf-parse` (PDF), `mammoth` (DOCX), UTF-8 Stream Parser (TXT) |
-| **Testing** | Vitest (51 total tests across server unit, integration, and frontend component/E2E suites) |
+| **Testing** | Vitest (70 total tests across 13 test suites in server unit/integration/E2E and frontend component/flow suites) |
 | **DevOps & Infra** | Docker (Multi-stage build), Docker Compose, GitHub Actions CI/CD, Render Blueprint |
 
 ---
@@ -74,7 +74,19 @@ $$\text{Final Score} = (\text{Semantic} \times 0.55) + (\text{Skill Overlap} \ti
 
 If vector embeddings are unavailable or initializing, the system activates **Degraded Mode** ($60\%$ Skills + $25\%$ Keywords + $15\%$ Experience) with an explicit `isDegraded: true` flag.
 
-For in-depth mathematical formulas and the `pgvector` migration roadmap, see [docs/AI_MATCHING.md](docs/AI_MATCHING.md).
+### Empirical Evaluation Benchmark
+
+SkillBridge AI includes an open evaluation harness ([`evaluation/`](evaluation/)) running over 20 candidate profiles across 8 distinct micro-internships:
+
+| Metric | Hybrid Pipeline (Semantic + Rules) | Degraded Mode (Rules Only) | Delta / Improvement |
+| :--- | :---: | :---: | :---: |
+| **Top-1 Accuracy** | **1.00 (100%)** | 0.88 (87.5%) | **+12.5%** |
+| **Mean Reciprocal Rank (MRR)** | **1.00** | 0.94 | **+0.06** |
+| **Average Precision (MAP)** | **0.99** | 0.93 | **+0.06** |
+| **Mean Latency (Cached)** | **1.25 ms** | 0.88 ms | +0.37 ms |
+
+See [docs/AI_EVALUATION.md](docs/AI_EVALUATION.md) for full evaluation methodology and benchmark details.
+For mathematical formulas and the `pgvector` migration roadmap, see [docs/AI_MATCHING.md](docs/AI_MATCHING.md).
 
 ---
 
@@ -126,30 +138,45 @@ npm run dev
 
 ## Automated Verification & Testing
 
-The platform includes 51 automated tests covering unit logic, database transactions, authorization guards, and frontend user flows.
+The platform includes **70 automated tests across 13 test suites** covering unit logic, database transactions, authorization guards, AI embeddings, and frontend user flows.
 
 ```bash
-# Run all tests across both server and web workspaces
+# Run all tests across both server and web workspaces (70 tests)
 npm test
 
-# Run backend test suite (41 tests)
+# Run backend test suite (58 tests across 9 test suites)
 npm test -w server
 
-# Run frontend test suite (10 tests)
+# Run frontend test suite (12 tests across 4 test suites)
 npm test -w web
 
-# Build frontend production bundle
+# Build frontend production bundle (TypeScript check & Vite bundling)
 npm run build -w web
 
 # Run production deployment readiness verification
 node scripts/verify-production.mjs
+
+# Run automated HTTP smoke test against running server
+node scripts/smoke-test.mjs http://localhost:5000
 ```
 
 ### Test Coverage Highlights
 - **ML & Scoring**: Validates cosine similarity, lookaround word boundary skill extraction, keyword tokenization, and degraded mode mathematical weighting.
-- **Security & Auth**: Validates bcrypt salt hashing, JWT lifecycle, expired token rejection, and student vs. recruiter RBAC.
-- **Data Integrity**: Enforces uniqueness constraints, prevents author self-application, and validates application status transitions (`APPLIED` $\rightarrow$ `SHORTLISTED` $\rightarrow$ `ACCEPTED`).
-- **E2E User Simulation**: Simulates student onboarding, resume upload, browse filtering, matching, task application, and tracking.
+- **Security & Auth**: Validates bcrypt salt hashing, JWT lifecycle, SHA-256 hashed refresh token storage, refresh token rotation, and reuse attack detection.
+- **Real Database Recruiter-Student E2E**: End-to-end multi-party marketplace lifecycle against live PostgreSQL (`server/test/e2e.recruiter-student.test.js`).
+- **Data Integrity**: Enforces compound unique constraints, prevents author self-application, and validates strict application status state machine transitions (`APPLIED` $\rightarrow$ `SHORTLISTED` $\rightarrow$ `ACCEPTED`).
+- **Frontend User Simulation**: Simulates student onboarding, resume upload, browse filtering, transparent formula toggles, task application, and stage tracking.
+
+---
+
+## Security & Reliability Architecture
+
+- **CORS Whitelist**: Disallows wildcard (`*`) origins in production mode; requires explicit `CORS_ORIGIN` or `FRONTEND_URL` environment variables.
+- **Hashed Refresh Tokens**: Refresh tokens are stored strictly as SHA-256 hashes in PostgreSQL. Replay attacks trigger immediate revocation of all user tokens.
+- **Graceful Shutdown**: Intercepts `SIGTERM` and `SIGINT`, draining active HTTP connections and safely disconnecting Prisma client pools.
+- **Container Isolation**: Multi-stage `Dockerfile` drops root privileges and executes as non-root `USER node` with built-in Docker `HEALTHCHECK`.
+
+For details on security controls, rate limiting, and threat vectors, see [docs/SECURITY.md](docs/SECURITY.md) and [docs/PRODUCTION_AUDIT.md](docs/PRODUCTION_AUDIT.md).
 
 ---
 
@@ -159,7 +186,7 @@ node scripts/verify-production.mjs
 ```bash
 docker compose up -d --build
 ```
-Launches PostgreSQL 15 and the multi-stage SkillBridge API container with automatic migrations and `/health` probes.
+Launches PostgreSQL 15 and the hardened SkillBridge API container with automatic migrations and `/health` probes.
 
 ### Deploy to Render via Blueprint
 1. Connect your repository to Render.
@@ -172,6 +199,10 @@ For comprehensive deployment steps, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Documentation Index
 
+- [docs/FINAL_STATUS.md](docs/FINAL_STATUS.md) — Comprehensive production readiness audit and verification report.
+- [docs/SECURITY.md](docs/SECURITY.md) — Security controls, refresh token rotation, input sanitization, and CORS configuration.
+- [docs/AI_EVALUATION.md](docs/AI_EVALUATION.md) — Empirical AI benchmark results, precision metrics, and latency analysis.
+- [docs/PRODUCTION_AUDIT.md](docs/PRODUCTION_AUDIT.md) — Production audit report and remediation details.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Layered architecture, repositories, and data flow.
 - [docs/AI_MATCHING.md](docs/AI_MATCHING.md) — Semantic embeddings, scoring formulas, and pgvector roadmap.
 - [docs/API.md](docs/API.md) — Complete REST API specification with request/response envelopes.
@@ -180,5 +211,12 @@ For comprehensive deployment steps, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ---
 
+## Contributing & Guidelines
+
+Please review [CONTRIBUTING.md](CONTRIBUTING.md) for code style conventions, test requirements, and git workflow before submitting pull requests.
+
+---
+
 ## License
-MIT
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

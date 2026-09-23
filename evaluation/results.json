@@ -1,0 +1,39 @@
+{
+  "benchmarkTimestamp": "2026-09-23T01:02:23.153Z",
+  "candidateCount": 20,
+  "taskCount": 8,
+  "weights": {
+    "hybrid": {
+      "semantic": 0.55,
+      "skill": 0.25,
+      "keyword": 0.1,
+      "experience": 0.1
+    }
+  },
+  "metrics": {
+    "semantic_only": {
+      "top1Accuracy": 1,
+      "top3Recall": 1,
+      "top5Recall": 1,
+      "meanReciprocalRank": 1
+    },
+    "skill_only": {
+      "top1Accuracy": 0.95,
+      "top3Recall": 1,
+      "top5Recall": 1,
+      "meanReciprocalRank": 0.975
+    },
+    "keyword_only": {
+      "top1Accuracy": 0.9,
+      "top3Recall": 1,
+      "top5Recall": 1,
+      "meanReciprocalRank": 0.95
+    },
+    "hybrid_engine": {
+      "top1Accuracy": 1,
+      "top3Recall": 1,
+      "top5Recall": 1,
+      "meanReciprocalRank": 1
+    }
+  }
+}

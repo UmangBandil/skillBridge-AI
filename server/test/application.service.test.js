@@ -9,6 +9,7 @@ describe('Marketplace Application Service', () => {
   let recruiterUser;
   let otherRecruiterUser;
   let testTask;
+  let testTask2;
 
   beforeAll(async () => {
     // Clean any previous test data
@@ -43,12 +44,20 @@ describe('Marketplace Application Service', () => {
     });
     otherRecruiterUser = otherRecruiterRes.user;
 
-    // 4. Create a task by recruiter
+    // 4. Create tasks by recruiter
     testTask = await taskService.createTask({
       title: 'Full Stack Engineering Intern',
       description: 'Hands on project with React and Node.js microservices',
       skills: ['React', 'Node.js', 'PostgreSQL'],
       budget: 4500,
+      authorId: recruiterUser.id
+    });
+
+    testTask2 = await taskService.createTask({
+      title: 'Backend Engineering Intern',
+      description: 'Building robust Node.js and PostgreSQL APIs',
+      skills: ['Node.js', 'PostgreSQL'],
+      budget: 4000,
       authorId: recruiterUser.id
     });
   });
@@ -126,10 +135,23 @@ describe('Marketplace Application Service', () => {
   });
 
   it('should allow student to withdraw their active application', async () => {
-    const apps = await applicationService.getStudentApplications(studentUser.id);
-    const appId = apps[0].id;
+    const app2 = await applicationService.apply({
+      userId: studentUser.id,
+      taskId: testTask2.id,
+      coverLetter: 'Interested in backend API work.'
+    });
 
-    const withdrawn = await applicationService.withdraw(appId, studentUser.id);
+    const withdrawn = await applicationService.withdraw(app2.id, studentUser.id);
     expect(withdrawn.status).toBe('WITHDRAWN');
+  });
+
+  it('should prevent student from withdrawing an already accepted application', async () => {
+    const apps = await applicationService.getStudentApplications(studentUser.id);
+    const acceptedApp = apps.find(a => a.status === 'ACCEPTED');
+    expect(acceptedApp).toBeDefined();
+
+    await expect(
+      applicationService.withdraw(acceptedApp.id, studentUser.id)
+    ).rejects.toThrow('Cannot withdraw an application that has already been accepted');
   });
 });

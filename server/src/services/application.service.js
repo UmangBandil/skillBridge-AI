@@ -1,6 +1,15 @@
 import applicationRepository from '../repositories/application.repository.js';
 import taskRepository from '../repositories/task.repository.js';
 
+const VALID_STATUS_TRANSITIONS = {
+  APPLIED: ['REVIEWING', 'SHORTLISTED', 'REJECTED'],
+  REVIEWING: ['SHORTLISTED', 'ACCEPTED', 'REJECTED'],
+  SHORTLISTED: ['ACCEPTED', 'REJECTED'],
+  ACCEPTED: [],
+  REJECTED: [],
+  WITHDRAWN: []
+};
+
 export const applicationService = {
   apply: async ({ userId, taskId, coverLetter }) => {
     // 1. Verify task existence and status
@@ -22,7 +31,7 @@ export const applicationService = {
     // 2. Prevent author applying to own task
     if (task.authorId === userId) {
       const err = new Error('You cannot apply to your own internship opportunity');
-      err.status = 400;
+      err.status = 403;
       err.code = 'CANNOT_APPLY_TO_OWN_TASK';
       throw err;
     }
@@ -36,7 +45,18 @@ export const applicationService = {
       throw err;
     }
 
-    return applicationRepository.create({ userId, taskId, coverLetter });
+    try {
+      return await applicationRepository.create({ userId, taskId, coverLetter });
+    } catch (err) {
+      // Catch concurrent duplicate application race condition via DB compound unique key
+      if (err.code === 'P2002') {
+        const conflictErr = new Error('You have already applied to this opportunity');
+        conflictErr.status = 409;
+        conflictErr.code = 'APPLICATION_ALREADY_EXISTS';
+        throw conflictErr;
+      }
+      throw err;
+    }
   },
 
   withdraw: async (applicationId, userId) => {
@@ -59,6 +79,13 @@ export const applicationService = {
       const err = new Error('Application has already been withdrawn');
       err.status = 400;
       err.code = 'ALREADY_WITHDRAWN';
+      throw err;
+    }
+
+    if (application.status === 'ACCEPTED' || application.status === 'REJECTED') {
+      const err = new Error(`Cannot withdraw an application that has already been ${application.status.toLowerCase()}`);
+      err.status = 400;
+      err.code = 'INVALID_WITHDRAWAL_STATE';
       throw err;
     }
 
@@ -105,6 +132,19 @@ export const applicationService = {
       const err = new Error('You are not authorized to manage applications for this task');
       err.status = 403;
       err.code = 'FORBIDDEN';
+      throw err;
+    }
+
+    const currentStatus = application.status;
+    if (currentStatus === status) {
+      return application;
+    }
+
+    const allowed = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+    if (!allowed.includes(status)) {
+      const err = new Error(`Cannot transition application from ${currentStatus} to ${status}`);
+      err.status = 400;
+      err.code = 'INVALID_STATUS_TRANSITION';
       throw err;
     }
 

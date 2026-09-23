@@ -3,6 +3,14 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import config from '../config/index.js';
 import userRepository from '../repositories/user.repository.js';
+import logger from '../utils/logger.js';
+
+/**
+ * Computes a SHA-256 hash of a refresh token string for secure persistence
+ */
+const hashRefreshToken = (token) => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
 
 export const authService = {
   signup: async ({ email, password, name, role }) => {
@@ -28,13 +36,14 @@ export const authService = {
       { expiresIn: config.JWT_EXPIRES_IN }
     );
 
-    // Refresh token
+    // Generate random refresh token, store SHA-256 hash in DB, return plaintext to user
     const refreshToken = crypto.randomBytes(40).toString('hex');
+    const hashedToken = hashRefreshToken(refreshToken);
     const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     await userRepository.createRefreshToken({
       userId: user.id,
-      token: refreshToken,
-      expiresAt: refreshExpiresAt
+      token: hashedToken,
+      expiresAt: refreshExpiresAt,
     });
 
     return {
@@ -42,10 +51,10 @@ export const authService = {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
       },
       token,
-      refreshToken
+      refreshToken,
     };
   },
 
@@ -73,11 +82,12 @@ export const authService = {
     );
 
     const refreshToken = crypto.randomBytes(40).toString('hex');
+    const hashedToken = hashRefreshToken(refreshToken);
     const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await userRepository.createRefreshToken({
       userId: user.id,
-      token: refreshToken,
-      expiresAt: refreshExpiresAt
+      token: hashedToken,
+      expiresAt: refreshExpiresAt,
     });
 
     return {
@@ -85,25 +95,47 @@ export const authService = {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
       },
       role: user.role,
       token,
-      refreshToken
+      refreshToken,
     };
   },
 
   refreshToken: async (tokenStr) => {
-    const record = await userRepository.findRefreshToken(tokenStr);
-    if (!record || record.revoked || new Date() > record.expiresAt) {
+    if (!tokenStr || typeof tokenStr !== 'string') {
+      const err = new Error('Refresh token is required');
+      err.status = 400;
+      err.code = 'INVALID_REFRESH_TOKEN';
+      throw err;
+    }
+
+    const hashed = hashRefreshToken(tokenStr);
+    const record = await userRepository.findRefreshToken(hashed);
+
+    // Reuse detection: If token exists but was already revoked, someone may have compromised it.
+    // Invalidate all active sessions for the user as a safety precaution.
+    if (record && record.revoked) {
+      logger.warn('Revoked refresh token presented. Invalidate all user sessions for safety.', {
+        userId: record.userId,
+      });
+      await userRepository.revokeAllUserRefreshTokens(record.userId);
+      const err = new Error('Refresh token has been revoked or reused. All sessions terminated.');
+      err.status = 401;
+      err.code = 'REFRESH_TOKEN_REUSE';
+      throw err;
+    }
+
+    if (!record || new Date() > record.expiresAt) {
       const err = new Error('Invalid or expired refresh token');
       err.status = 401;
       err.code = 'INVALID_REFRESH_TOKEN';
       throw err;
     }
 
-    // Rotate refresh token
-    await userRepository.revokeRefreshToken(tokenStr);
+    // Rotate: Revoke the used refresh token immediately
+    await userRepository.revokeRefreshToken(hashed);
 
     const user = record.user;
     const newToken = jwt.sign(
@@ -112,12 +144,14 @@ export const authService = {
       { expiresIn: config.JWT_EXPIRES_IN }
     );
 
+    // Issue a new refresh token and persist its hash
     const newRefreshToken = crypto.randomBytes(40).toString('hex');
+    const newHashedToken = hashRefreshToken(newRefreshToken);
     const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await userRepository.createRefreshToken({
       userId: user.id,
-      token: newRefreshToken,
-      expiresAt: newExpiresAt
+      token: newHashedToken,
+      expiresAt: newExpiresAt,
     });
 
     return {
@@ -127,10 +161,23 @@ export const authService = {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
-      }
+        role: user.role,
+      },
     };
-  }
+  },
+
+  logout: async (tokenStr) => {
+    if (tokenStr && typeof tokenStr === 'string') {
+      const hashed = hashRefreshToken(tokenStr);
+      try {
+        await userRepository.revokeRefreshToken(hashed);
+      } catch (err) {
+        // Safe to ignore if token wasn't found or already revoked
+        logger.debug('Refresh token not found during logout revoke', { error: err.message });
+      }
+    }
+    return { message: 'Logged out successfully' };
+  },
 };
 
 export default authService;

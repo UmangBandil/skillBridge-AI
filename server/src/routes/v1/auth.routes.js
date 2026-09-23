@@ -10,6 +10,7 @@ const router = Router();
 router.post('/signup', authLimiter, validate(signupSchema), authController.signup);
 router.post('/signin', authLimiter, validate(signinSchema), authController.signin);
 router.post('/refresh', authLimiter, validate(refreshTokenSchema), authController.refreshToken);
+router.post('/logout', authController.logout);
 router.get('/me', protect, authController.me);
 
 export default router;

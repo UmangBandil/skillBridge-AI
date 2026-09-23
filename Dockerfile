@@ -36,11 +36,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=10000
 
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server ./server
-COPY --from=builder /app/web/dist ./web/dist
-COPY --from=builder /app/web/package.json ./web/package.json
+COPY --chown=node:node --from=builder /app/package.json ./
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/server ./server
+COPY --chown=node:node --from=builder /app/web/dist ./web/dist
+COPY --chown=node:node --from=builder /app/web/package.json ./web/package.json
+
+USER node
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:10000/health || exit 1

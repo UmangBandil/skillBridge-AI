@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Application, getMyApplications, withdrawApplication } from '../../services/api';
 import { Link } from 'react-router-dom';
+import { Toast, ToastProps } from '../../components/UI/Toast';
 
 const STATUS_BADGES: Record<string, { bg: string; text: string; icon: string }> = {
   APPLIED: {
@@ -35,11 +36,15 @@ const STATUS_BADGES: Record<string, { bg: string; text: string; icon: string }> 
   }
 };
 
+const STAGES = ['APPLIED', 'REVIEWING', 'SHORTLISTED', 'ACCEPTED'];
+
 export const ApplicationTracker = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(null);
+  const [toast, setToast] = useState<Omit<ToastProps, 'onClose'> | null>(null);
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -58,20 +63,28 @@ export const ApplicationTracker = () => {
     fetchApplications();
   }, []);
 
-  const handleWithdraw = async (applicationId: string) => {
-    if (!window.confirm('Are you sure you want to withdraw this application?')) {
-      return;
-    }
-
+  const handleWithdrawConfirm = async (applicationId: string) => {
     setActionInProgress(applicationId);
     try {
       await withdrawApplication(applicationId);
+      setToast({
+        message: 'Application withdrawn successfully',
+        type: 'info'
+      });
       await fetchApplications();
     } catch (err: any) {
-      alert(err?.message || 'Failed to withdraw application');
+      setToast({
+        message: err?.message || 'Failed to withdraw application',
+        type: 'error'
+      });
     } finally {
       setActionInProgress(null);
+      setConfirmWithdrawId(null);
     }
+  };
+
+  const getStageIndex = (status: string) => {
+    return STAGES.indexOf(status);
   };
 
   return (
@@ -165,6 +178,8 @@ export const ApplicationTracker = () => {
             {applications.map((app) => {
               const badge = STATUS_BADGES[app.status] || STATUS_BADGES.APPLIED;
               const canWithdraw = app.status === 'APPLIED' || app.status === 'REVIEWING';
+              const currentStageIdx = getStageIndex(app.status);
+              const isTerminalNegative = app.status === 'REJECTED' || app.status === 'WITHDRAWN';
 
               return (
                 <div
@@ -196,6 +211,48 @@ export const ApplicationTracker = () => {
                     </div>
                   </div>
 
+                  {/* Stage Timeline */}
+                  {!isTerminalNegative && (
+                    <div className="my-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                      <div className="grid grid-cols-4 gap-1 text-center">
+                        {STAGES.map((stage, idx) => {
+                          const isDone = currentStageIdx >= idx;
+                          const isCurrent = currentStageIdx === idx;
+                          return (
+                            <div key={stage} className="relative flex flex-col items-center">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all mb-1 ${
+                                  isCurrent
+                                    ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/40'
+                                    : isDone
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                }`}
+                              >
+                                {isDone && !isCurrent ? (
+                                  <span className="material-symbols-outlined text-[14px]">check</span>
+                                ) : (
+                                  idx + 1
+                                )}
+                              </div>
+                              <span
+                                className={`text-[10px] font-semibold tracking-wider ${
+                                  isCurrent
+                                    ? 'text-blue-600 dark:text-blue-400'
+                                    : isDone
+                                    ? 'text-slate-700 dark:text-slate-300'
+                                    : 'text-slate-400 dark:text-slate-500'
+                                }`}
+                              >
+                                {stage}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {app.coverLetter && (
                     <div className="mb-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
                       <p className="font-semibold text-slate-700 dark:text-slate-200 mb-0.5">Your Note:</p>
@@ -210,20 +267,53 @@ export const ApplicationTracker = () => {
 
                     {canWithdraw && (
                       <button
-                        onClick={() => handleWithdraw(app.id)}
+                        onClick={() => setConfirmWithdrawId(app.id)}
                         disabled={actionInProgress === app.id}
                         className="px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium text-xs disabled:opacity-50"
                       >
-                        {actionInProgress === app.id ? 'Withdrawing...' : 'Withdraw Application'}
+                        Withdraw Application
                       </button>
                     )}
                   </div>
+
+                  {/* Inline Confirmation Modal */}
+                  {confirmWithdrawId === app.id && (
+                    <div className="mt-4 p-4 rounded-xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-rose-800 dark:text-rose-300 font-medium">
+                        <span className="material-symbols-outlined text-base">warning</span>
+                        <span>Confirm withdrawal? This action cannot be reversed.</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setConfirmWithdrawId(null)}
+                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleWithdrawConfirm(app.id)}
+                          disabled={actionInProgress === app.id}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-colors disabled:opacity-50"
+                        >
+                          {actionInProgress === app.id ? 'Withdrawing...' : 'Yes, Withdraw'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

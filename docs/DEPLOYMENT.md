@@ -30,9 +30,11 @@ The repository includes a ready-to-deploy [`render.yaml`](../render.yaml) specif
 5. Render will automatically detect `render.yaml` and provision:
    - **`skillbridge-db`**: A managed PostgreSQL database instance.
    - **`skillbridge-api`**: A multi-stage Docker container running migrations and launching the server.
-6. Under the `skillbridge-api` environment settings, configure optional external keys if available:
-   - `OPENAI_API_KEY` (Optional for LLM enhanced parsing; falls back cleanly to deterministic engine if empty)
-   - `STRIPE_SECRET_KEY` (Optional for billing integration)
+6. Configure environment variables in the Render dashboard:
+   - `CLIENT_URL`: The production URL of your frontend (e.g. `https://skillbridge-api.onrender.com`).
+   - `FRONTEND_URL`: Whitelisted origin for CORS.
+   - `OPENAI_API_KEY`: *(Optional)* For LLM enhanced parsing fallback; falls back cleanly to deterministic engine if omitted.
+   - `STRIPE_SECRET_KEY`: *(Optional)* For future billing integration.
 7. Click **Apply Blueprint**.
 
 ---
@@ -70,7 +72,8 @@ docker run -d \
   -e NODE_ENV=production \
   -e DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require" \
   -e JWT_SECRET="your-secure-production-jwt-secret-at-least-32-chars" \
-  -e CORS_ORIGIN="*" \
+  -e CLIENT_URL="https://your-domain.com" \
+  -e FRONTEND_URL="https://your-domain.com" \
   skillbridge-api:latest
 ```
 
@@ -83,10 +86,11 @@ docker run -d \
 | `NODE_ENV` | Yes | `development` | Runtime mode (`development`, `production`, `test`) |
 | `PORT` | No | `5000` (local) / `10000` (Docker) | Port to bind HTTP server |
 | `DATABASE_URL` | Yes | — | PostgreSQL connection URI |
-| `JWT_SECRET` | Yes | — | Secret string for HMAC-SHA256 JWT tokens ($\ge 32$ chars) |
+| `JWT_SECRET` | Yes | — | Secret string for HMAC-SHA256 JWT tokens ($\ge 16$ chars) |
 | `JWT_EXPIRES_IN` | No | `7d` | Lifetime of access tokens |
-| `CORS_ORIGIN` | No | `*` | Allowed CORS origin or comma-separated origins |
 | `CLIENT_URL` | No | `http://localhost:5173` | Allowed frontend origin for strict CORS |
+| `FRONTEND_URL` | No | `http://localhost:5173` | Additional allowed origin for decoupled frontends |
+| `CORS_ORIGIN` | No | — | Comma-separated whitelist of allowed origins (no wildcard in prod) |
 | `RATE_LIMIT_WINDOW_MS`| No | `900000` (15m) | Rate limiting rolling window |
 | `RATE_LIMIT_MAX` | No | `300` | Max requests per IP window |
 | `EMBEDDING_MODEL` | No | `Xenova/all-MiniLM-L6-v2` | Embedding model identifier |
@@ -98,18 +102,25 @@ docker run -d \
 
 ---
 
-## 5. Automated Verification Script
+## 5. Automated Verification & Smoke Testing
 
-Before promoting any release to production, run the bundled verification harness:
+### 5.1 Pre-Deployment Verification
+Before deploying, execute the local production readiness harness:
 
 ```bash
 node scripts/verify-production.mjs
 ```
 
+### 5.2 Post-Deployment Smoke Test
+After deploying to Render or staging, execute non-destructive smoke tests:
+
+```bash
+BASE_URL=https://skillbridge-api.onrender.com node scripts/smoke-test.mjs
+```
+
 This verifies:
-- Environment variable completeness
-- PostgreSQL database query execution
-- Prisma schema and table availability
-- Skill extraction boundary safety
-- Hugging Face ONNX embedding vector generation ($384$ dimensions)
-- 4-factor scoring calculation and breakdown validation
+- `GET /health` process liveness
+- `GET /ready` database connectivity
+- `GET /api/v1/health` and `/api/v1/ready`
+- `GET /api/v1/tasks?limit=3` public opportunity discovery
+- `POST /api/v1/tasks/match` non-destructive AI recommendation query

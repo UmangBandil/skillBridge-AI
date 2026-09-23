@@ -67,6 +67,13 @@ export const userRepository = {
       where: { token },
       data: { revoked: true }
     });
+  },
+
+  revokeAllUserRefreshTokens: async (userId) => {
+    return prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true }
+    });
   }
 };
 

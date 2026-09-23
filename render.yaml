@@ -18,9 +18,9 @@ services:
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
-      - key: CORS_ORIGIN
-        value: '*'
       - key: CLIENT_URL
+        value: https://skillbridge-api.onrender.com
+      - key: FRONTEND_URL
         value: https://skillbridge-api.onrender.com
       - key: RATE_LIMIT_WINDOW_MS
         value: 900000

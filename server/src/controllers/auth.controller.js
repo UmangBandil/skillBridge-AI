@@ -42,6 +42,19 @@ export const authController = {
     }
   },
 
+  logout: async (req, res, next) => {
+    try {
+      const { refreshToken } = req.body || {};
+      const result = await authService.logout(refreshToken);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   me: async (req, res) => {
     res.json({
       success: true,

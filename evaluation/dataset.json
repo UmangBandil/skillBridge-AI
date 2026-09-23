@@ -1,0 +1,214 @@
+{
+  "tasks": [
+    {
+      "id": "task_fullstack",
+      "title": "Full Stack React & Node.js Micro-Internship",
+      "description": "Develop full-stack web applications with React, TypeScript, Node.js, Express, and PostgreSQL. Implement RESTful APIs, responsive interfaces, and automated unit tests.",
+      "skills": ["React", "TypeScript", "Node.js", "PostgreSQL", "Express", "REST API"]
+    },
+    {
+      "id": "task_ai_rag",
+      "title": "Generative AI & LLM Evaluation Pipeline",
+      "description": "Construct an evaluation harness for LLM prompts and Retrieval Augmented Generation (RAG) with LangChain and Python. Benchmark vector search precision against curated ground truth sets.",
+      "skills": ["Python", "OpenAI", "LangChain", "PyTorch", "NLP", "Vector Databases"]
+    },
+    {
+      "id": "task_devops",
+      "title": "Cloud Infrastructure & CI/CD Pipeline Automation",
+      "description": "Build automated Docker container build and GitHub Actions deployment workflows. Configure AWS Terraform infrastructure and container monitoring.",
+      "skills": ["Docker", "Kubernetes", "AWS", "CI/CD", "Terraform", "Linux"]
+    },
+    {
+      "id": "task_mobile",
+      "title": "Cross-Platform Mobile App with React Native",
+      "description": "Develop cross-platform iOS and Android mobile features with React Native and Expo. Implement offline state caching and responsive mobile interfaces.",
+      "skills": ["React Native", "TypeScript", "Mobile Development", "Expo", "Redux"]
+    },
+    {
+      "id": "task_data_eng",
+      "title": "Data Engineering & Stream Analytics Pipeline",
+      "description": "Design ETL data ingestion pipelines using Python, SQL, and PostgreSQL. Cleanse and transform multi-gigabyte datasets and construct operational dashboards.",
+      "skills": ["Python", "SQL", "Pandas", "PostgreSQL", "Data Pipelines", "ETL"]
+    },
+    {
+      "id": "task_security",
+      "title": "Application Security & Vulnerability Auditing",
+      "description": "Perform static and dynamic security auditing on web applications. Identify OWASP Top 10 vulnerabilities, review npm dependencies, and automate security checks.",
+      "skills": ["Cybersecurity", "Penetration Testing", "Node.js", "Linux", "OWASP", "Python"]
+    },
+    {
+      "id": "task_ui_ux",
+      "title": "Design System & Accessible Component Discovery",
+      "description": "Create a unified visual design system in Figma, interactive prototypes, and accessible WCAG-compliant design components for web and mobile.",
+      "skills": ["Figma", "UI/UX", "Design Systems", "Prototyping", "Accessibility"]
+    },
+    {
+      "id": "task_fintech_stripe",
+      "title": "Payment Gateway & Donation Processing Micro-Internship",
+      "description": "Build an escrow and donation management portal with Stripe API and webhooks. Handle payment failures, refunds, and financial reporting dashboards.",
+      "skills": ["React", "Node.js", "Stripe", "PostgreSQL", "TypeScript", "Express"]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "cand_01",
+      "name": "Sarah Chen",
+      "expectedTaskId": "task_fullstack",
+      "summary": "Full stack software engineer with 2 years building React and Node.js web applications with PostgreSQL and TypeScript.",
+      "skills": ["React", "TypeScript", "Node.js", "PostgreSQL", "Express", "HTML", "CSS"],
+      "experience": ["Software Engineer Intern at WebTech", "Full Stack Project Lead at Campus Lab"]
+    },
+    {
+      "id": "cand_02",
+      "name": "Marcus Vance",
+      "expectedTaskId": "task_ai_rag",
+      "summary": "Computer science student researching natural language processing, vector embeddings, LangChain, and OpenAI API integrations.",
+      "skills": ["Python", "PyTorch", "LangChain", "OpenAI", "NLP", "HuggingFace", "Scikit-Learn"],
+      "experience": ["Undergraduate AI Research Assistant", "NLP Sentiment Classifier Builder"]
+    },
+    {
+      "id": "cand_03",
+      "name": "Elena Rostova",
+      "expectedTaskId": "task_devops",
+      "summary": "Cloud and systems enthusiast experienced with Docker containers, Kubernetes clusters, GitHub Actions CI/CD, and AWS infrastructure.",
+      "skills": ["Docker", "Kubernetes", "AWS", "CI/CD", "Terraform", "Linux", "Bash"],
+      "experience": ["Infrastructure Intern at CloudScale", "Linux Systems Administrator for Student Union"]
+    },
+    {
+      "id": "cand_04",
+      "name": "Jordan Bell",
+      "expectedTaskId": "task_mobile",
+      "summary": "Mobile frontend developer focused on cross-platform iOS and Android applications with React Native, Expo, and TypeScript.",
+      "skills": ["React Native", "Expo", "TypeScript", "JavaScript", "Redux", "Mobile Development"],
+      "experience": ["Mobile Developer Intern at AppForge", "Published React Native campus transit app"]
+    },
+    {
+      "id": "cand_05",
+      "name": "Amina Patel",
+      "expectedTaskId": "task_data_eng",
+      "summary": "Data engineer specializing in Python ETL pipelines, PostgreSQL database optimization, Pandas, and data warehouse ingestion.",
+      "skills": ["Python", "SQL", "Pandas", "PostgreSQL", "ETL", "Data Pipelines", "NumPy"],
+      "experience": ["Data Analyst Intern at FinMetrics", "Automated survey data ingestion system"]
+    },
+    {
+      "id": "cand_06",
+      "name": "Liam Murphy",
+      "expectedTaskId": "task_security",
+      "summary": "Cybersecurity researcher focused on penetration testing, OWASP Top 10 vulnerabilities, Python automation, and secure code audits.",
+      "skills": ["Cybersecurity", "Penetration Testing", "Linux", "Python", "OWASP", "Wireshark"],
+      "experience": ["Cybersecurity Society Captain", "Security Audit Intern at CyberGuard"]
+    },
+    {
+      "id": "cand_07",
+      "name": "Chloe Tanaka",
+      "expectedTaskId": "task_ui_ux",
+      "summary": "Product designer specializing in Figma component libraries, typography, design systems, and accessible interactive prototypes.",
+      "skills": ["Figma", "UI/UX", "Design Systems", "Prototyping", "Accessibility", "Wireframing"],
+      "experience": ["UI/UX Intern at Studio Nova", "Redesigned university enrollment portal"]
+    },
+    {
+      "id": "cand_08",
+      "name": "David O'Connor",
+      "expectedTaskId": "task_fintech_stripe",
+      "summary": "Backend web developer with experience integrating Stripe payment APIs, webhooks, Node.js, Express, and PostgreSQL billing systems.",
+      "skills": ["Node.js", "Stripe", "PostgreSQL", "React", "TypeScript", "Express", "REST API"],
+      "experience": ["Fintech Club Developer", "Built e-commerce checkout integration for local business"]
+    },
+    {
+      "id": "cand_09",
+      "name": "Rachel Kim",
+      "expectedTaskId": "task_fullstack",
+      "summary": "Frontend leaning full-stack engineer who builds responsive React web apps, TypeScript components, and Node.js APIs.",
+      "skills": ["React", "JavaScript", "TypeScript", "Node.js", "Tailwind CSS", "REST API"],
+      "experience": ["Web Development Fellow", "Hackathon Winner for Social Good App"]
+    },
+    {
+      "id": "cand_10",
+      "name": "Tariq Mansour",
+      "expectedTaskId": "task_ai_rag",
+      "summary": "Machine learning engineer with hands-on experience building RAG architectures with LangChain, embeddings, and Python.",
+      "skills": ["Python", "LangChain", "OpenAI", "NLP", "FastAPI", "Vector Databases"],
+      "experience": ["Machine Learning Intern at AI Startup", "Built domain specific document QA system"]
+    },
+    {
+      "id": "cand_11",
+      "name": "Maya Lin",
+      "expectedTaskId": "task_devops",
+      "summary": "DevOps engineer passionate about containerization, Docker, Kubernetes, Terraform, and automated deployment pipelines.",
+      "skills": ["Docker", "Linux", "AWS", "CI/CD", "Kubernetes", "Bash"],
+      "experience": ["DevOps Assistant", "Built automated testing container image pipeline"]
+    },
+    {
+      "id": "cand_12",
+      "name": "Gabriel Santos",
+      "expectedTaskId": "task_mobile",
+      "summary": "React Native mobile engineer with experience delivering cross-platform applications and integrating REST APIs.",
+      "skills": ["React Native", "TypeScript", "JavaScript", "Mobile Development", "Expo"],
+      "experience": ["Freelance Mobile Developer", "Contributed to open source React Native UI kit"]
+    },
+    {
+      "id": "cand_13",
+      "name": "Priya Sharma",
+      "expectedTaskId": "task_data_eng",
+      "summary": "Data engineer experienced in building scalable data pipelines, SQL queries, Pandas, and PostgreSQL aggregations.",
+      "skills": ["Python", "SQL", "PostgreSQL", "Pandas", "ETL", "Data Pipelines"],
+      "experience": ["Data Engineering Intern at BioTech Co", "Created data validation suite"]
+    },
+    {
+      "id": "cand_14",
+      "name": "Kevin Zhang",
+      "expectedTaskId": "task_security",
+      "summary": "Information security student with practical experience identifying web vulnerabilities, OWASP standards, and code security.",
+      "skills": ["Cybersecurity", "OWASP", "Linux", "Python", "Penetration Testing"],
+      "experience": ["Bug bounty researcher", "Security Lead for University Hackathon"]
+    },
+    {
+      "id": "cand_15",
+      "name": "Olivia Moore",
+      "expectedTaskId": "task_ui_ux",
+      "summary": "UI/UX designer proficient in Figma, user journey mapping, design systems, and high fidelity interactive mockups.",
+      "skills": ["Figma", "UI/UX", "Prototyping", "Design Systems", "User Research"],
+      "experience": ["Design Intern at Digital Agency", "Created design system for 20+ member team"]
+    },
+    {
+      "id": "cand_16",
+      "name": "Lucas Meyer",
+      "expectedTaskId": "task_fintech_stripe",
+      "summary": "Software engineer with experience building payment flows with Stripe, Node.js, and PostgreSQL for SaaS platforms.",
+      "skills": ["Stripe", "Node.js", "Express", "PostgreSQL", "TypeScript"],
+      "experience": ["Full Stack Developer at Startup", "Built subscription billing module"]
+    },
+    {
+      "id": "cand_17",
+      "name": "Zoe Kravitz",
+      "expectedTaskId": "task_fullstack",
+      "summary": "Full stack developer proficient with modern React, TypeScript, Express, and relational database schema design.",
+      "skills": ["React", "TypeScript", "Node.js", "PostgreSQL", "Express"],
+      "experience": ["Web Development Intern", "Open source contributor to React ecosystem"]
+    },
+    {
+      "id": "cand_18",
+      "name": "Hassan Ali",
+      "expectedTaskId": "task_ai_rag",
+      "summary": "AI researcher specializing in deep learning, PyTorch, prompt engineering, LangChain, and embedding similarity search.",
+      "skills": ["Python", "PyTorch", "OpenAI", "LangChain", "NLP"],
+      "experience": ["Graduate Researcher in Machine Learning", "Published workshop paper on LLM evaluation"]
+    },
+    {
+      "id": "cand_19",
+      "name": "Emma Watson",
+      "expectedTaskId": "task_devops",
+      "summary": "Cloud infrastructure engineer with hands-on AWS, Docker container, CI/CD, and Terraform deployment experience.",
+      "skills": ["AWS", "Docker", "Terraform", "CI/CD", "Linux"],
+      "experience": ["Cloud Infrastructure Intern", "Migrated legacy services to containerized architecture"]
+    },
+    {
+      "id": "cand_20",
+      "name": "Devin Brooks",
+      "expectedTaskId": "task_data_eng",
+      "summary": "Data engineer with strong background in ETL data pipeline architecture, Python, SQL, and database warehousing.",
+      "skills": ["Python", "SQL", "ETL", "Data Pipelines", "PostgreSQL", "Pandas"],
+      "experience": ["Data Platform Intern", "Optimized warehouse query performance by 40%"]
+    }
+  ]
+}
